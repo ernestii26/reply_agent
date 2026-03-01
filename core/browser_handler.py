@@ -5,8 +5,8 @@ import re
 import time
 from playwright.sync_api import Page, expect
 from config.settings import (
-    BASE_URL, TARGET_BOARD_NAME, USER_NAME, 
-    EMAIL, PASSWORD, SELECTORS, WAIT_TIMES, FILES
+    BASE_URL, TARGET_BOARD_NAME, USER_NAME,
+    EMAIL, PASSWORD, SELECTORS, WAIT_TIMES, FILES, SEARCH_CONFIG, BROWSER_CONFIG
 )
 
 
@@ -40,11 +40,11 @@ class BrowserHandler:
         
         # 點擊登入
         self.page.get_by_role("button", name="登入").click()
-    
+        time.sleep(WAIT_TIMES["after_click"] / 1000)
     def navigate_to_board(self):
         """導航到目標討論板"""
-        self.page.get_by_role("button", name=TARGET_BOARD_NAME).click()
-        
+        # self.page.get_by_role("button", name=TARGET_BOARD_NAME).click()
+        self.page.goto("https://pei.com.tw/feed")
         # 等待貼文列表載入
         self.page.wait_for_selector(
             SELECTORS["post_container"], 
@@ -116,18 +116,35 @@ class BrowserHandler:
         """
         if user_name is None:
             user_name = USER_NAME
-        
+        print(f"  🔍 check_if_already_replied: 檢查是否已以 [{user_name}] 回覆")
+
+        # Step 1: 嘗試展開全部留言
         try:
-            # 查找評論區中的所有回覆者名稱
-            comment_authors = self.page.locator(SELECTORS["comment_author"]).all()
-            for author in comment_authors:
-                if author.inner_text() == user_name:
-                    return True
+            # 直接鎖定包含「查看全部」字眼的按鈕，避開 Regex 解析問題
+            expand_btn = self.page.locator("button:has-text('查看全部')").first
+            
+            # 確保按鈕有成功載入 DOM 結構中
+            expand_btn.wait_for(state="attached", timeout=3000)
+            if expand_btn.is_visible():
+                print(f"  🔍 找到「查看全部留言」按鈕，點擊展開...")
+                expand_btn.first.click()
+                time.sleep(1.5)
+            else:
+                print(f"  🔍 未找到「查看全部留言」按鈕（留言數少或不存在）")
+        except Exception as e:
+            print(f"  🔍 展開留言時出錯（忽略）: {e}")
+
+        # Step 2: 用 filter + regex 直接定位是否存在符合 user_name 的留言作者
+        try:
+            if self.page.locator(f"span:text-is('{user_name}')").count() > 0:
+                print("  🔍 結果：已回覆過（找到匹配）")
+                return True
+            print("  🔍 結果：尚未回覆（未找到匹配）")
             return False
         except Exception as e:
             print(f"  ⚠ 檢查回覆時出錯: {e}")
             return False
-    
+        
     def submit_reply(self, reply_content: str) -> bool:
         """
         提交回覆
@@ -160,8 +177,11 @@ class BrowserHandler:
                 print(f"  ⚠ 送出按鈕仍為 disabled 狀態")
                 return False
             
-            # 點擊送出（取消註解以實際送出）
-            # submit_button.click()
+            # 根據 dry_run 決定是否真正送出
+            if BROWSER_CONFIG["dry_run"]:
+                print(f"  🔸 DRY_RUN 模式：略過實際送出（在 settings.py 將 dry_run 改為 False 以啟用）")
+            else:
+                submit_button.click()
             print(f"  ✅ 已成功送出回覆!")
             time.sleep(WAIT_TIMES["after_submit"] / 1000)
             
@@ -227,6 +247,90 @@ class BrowserHandler:
         
         return False
     
+    def search_feed(self, query: str) -> bool:
+        try:
+            search_box = self.page.get_by_role("textbox", name="搜尋文章或作者暱稱")
+            search_box.click()
+            time.sleep(SEARCH_CONFIG["search_input_delay"] / 1000)
+            search_box.fill(query)
+            search_box.press("Enter")  # 補上這行送出搜尋
+            time.sleep(SEARCH_CONFIG["search_load_wait"] / 1000)
+            return True
+        except Exception as e:
+            print(f"  ⚠ 論壇搜尋時出錯: {e}")
+            return False
+    
+    def get_search_results(self, max_results: int = None) -> list:
+        """
+        獲取搜尋結果
+        
+        Args:
+            max_results: 最多返回結果數量
+        
+        Returns:
+            搜尋結果列表，每個結果包含 {id, title, content}
+        """
+        if max_results is None:
+            max_results = 5  # 預設上限
+        
+        results = []
+        try:
+            # 獲取搜尋結果貼文元素
+            posts = self.page.locator(SELECTORS["search_result_container"]).all()
+            
+            for post in posts[:max_results]:
+                try:
+                    post_id = self.get_post_id(post)
+                    title = self.get_post_title(post)
+                    content = self.get_post_content(post)
+                    
+                    results.append({
+                        "id": post_id,
+                        "title": title,
+                        "content": content[:200]  # 只取前200字避免太長
+                    })
+                except Exception as e:
+                    # 個別貼文解析失敗不影響其他結果
+                    continue
+        except Exception as e:
+            print(f"  ⚠ 獲取搜尋結果時出錯: {e}")
+        
+        return results
+    
+    def clear_search(self):
+        """清除搜尋框內容，返回正常瀏覽狀態"""
+        try:
+            search_box = self.page.get_by_role("textbox", name="搜尋文章或作者暱稱")
+            search_box.click()
+            search_box.fill("")  # 清空搜尋框
+            time.sleep(SEARCH_CONFIG["search_input_delay"] / 1000)
+        except Exception as e:
+            print(f"  ⚠ 清除搜尋時出錯: {e}")
+    
+    def take_screenshot(self, post_id: str) -> str:
+        """
+        截圖當前頁面並儲存到 screenshots 資料夾
+
+        Args:
+            post_id: 貼文 ID，用於命名截圖檔案
+
+        Returns:
+            截圖檔案路徑，失敗時回傳空字串
+        """
+        import os
+        from datetime import datetime
+        try:
+            screenshots_dir = FILES["screenshots_dir"]
+            os.makedirs(screenshots_dir, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(screenshots_dir, f"{timestamp}_{post_id}.png")
+            self.page.screenshot(path=filename, full_page=False)
+            print(f"  📷 截圖已儲存：{filename}")
+            return filename
+        except Exception as e:
+            print(f"  ⚠ 截圖失敗: {e}")
+            return ""
+
     def go_back(self):
         """返回貼文列表"""
         self.page.go_back()

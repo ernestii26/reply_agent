@@ -1,6 +1,8 @@
 """
-儲存管理 - 處理已回覆貼文的記錄
+儲存管理 - 處理已回覆貼文的記錄，以及回覆內容日誌
 """
+import json
+from datetime import datetime
 from pathlib import Path
 from typing import Set
 from config.settings import FILES
@@ -133,6 +135,33 @@ class PostStorage:
             貼文 ID 列表
         """
         return list(self.load())
+
+    def save_reply(self, post_id: str, title: str, reply_content: str) -> bool:
+        """
+        將回覆內容記錄到 replies_log.jsonl（每行一筆 JSON）
+
+        Args:
+            post_id: 貼文 ID
+            title: 貼文標題
+            reply_content: 回覆內容
+
+        Returns:
+            是否成功儲存
+        """
+        try:
+            log_path = Path(FILES["replies_log"])
+            entry = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "post_id": post_id,
+                "title": title,
+                "reply": reply_content,
+            }
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            return True
+        except Exception as e:
+            print(f"警告：儲存回覆記錄時出錯: {e}")
+            return False
 
 
 # 全局儲存實例

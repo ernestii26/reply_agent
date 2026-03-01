@@ -89,10 +89,11 @@ class AgentLogger:
         """AI 相關訊息（機器人圖標）"""
         self.logger.info(f"  🤖 {message}")
     
-    def reply(self, message, max_length=80):
-        """回覆內容訊息（對話框圖標）"""
-        preview = message[:max_length] + ("..." if len(message) > max_length else "")
-        self.logger.info(f"  💬 生成的回覆: {preview}")
+    def reply(self, message):
+        """回覆內容訊息（對話框圖標）— 完整顯示"""
+        self.logger.info(f"  💬 生成的回覆:")
+        for line in message.splitlines():
+            self.logger.info(f"      {line}")
     
     def warning(self, message):
         """警告訊息"""

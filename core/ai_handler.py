@@ -2,6 +2,7 @@
 AI 處理器 - 封裝 AI 判斷和回覆生成邏輯
 """
 import re
+import sys
 import google.generativeai as genai
 from config.settings import GEMINI_API_KEY, GEMINI_MODEL, AI_CONFIG
 
@@ -69,13 +70,14 @@ class AIHandler:
         text = title + content
         return any(keyword in text for keyword in question_keywords)
     
-    def generate_reply(self, title: str, content: str) -> str:
+    def generate_reply(self, title: str, content: str, enriched_context: str = None) -> str:
         """
         生成回覆內容
         
         Args:
             title: 貼文標題
             content: 貼文內容
+            enriched_context: 增強的上下文資訊（包含論壇討論和外部知識）
         
         Returns:
             生成的回覆內容
@@ -84,12 +86,26 @@ class AIHandler:
             return self._default_reply()
         
         try:
-            prompt = AI_CONFIG["reply_prompt_template"].format(
-                title=title,
-                content=content,
-                min_length=AI_CONFIG["reply_min_length"],
-                max_length=AI_CONFIG["reply_max_length"]
-            )
+            # 如果有增強上下文，使用增強上下文；否則使用原始內容
+            context_to_use = enriched_context if enriched_context else content
+            
+            # 根據是否有增強上下文調整提示詞
+            if enriched_context and enriched_context != content:
+                prompt = AI_CONFIG["reply_prompt_template"].format(
+                    title=title,
+                    content=context_to_use,
+                    min_length=AI_CONFIG["reply_min_length"],
+                    max_length=AI_CONFIG["reply_max_length"]
+                )
+                # 加入引用來源的指示
+                prompt += "\n\n注意：如果你參考了「論壇相關討論」或「最新相關資訊」中的具體數據（如分數、日期），請在回覆中自然地提及（例如：「根據最新資訊...」、「參考過往討論...」）。"
+            else:
+                prompt = AI_CONFIG["reply_prompt_template"].format(
+                    title=title,
+                    content=context_to_use,
+                    min_length=AI_CONFIG["reply_min_length"],
+                    max_length=AI_CONFIG["reply_max_length"]
+                )
             
             response = self.model.generate_content(prompt)
             reply = response.text.strip()
@@ -100,7 +116,7 @@ class AIHandler:
             return reply
         except Exception as e:
             print(f"  ⚠ AI生成回覆時出錯: {e}")
-            return self._default_reply()
+            sys.exit(1)
     
     def _remove_markdown(self, text: str) -> str:
         """

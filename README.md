@@ -142,7 +142,7 @@ if not storage.contains(post_id):
 
 ### 安裝依賴
 ```bash
-pip install playwright python-dotenv google-generativeai
+pip install playwright python-dotenv google-generativeai requests
 playwright install chromium
 ```
 
