@@ -1,0 +1,138 @@
+<div class="p-3 sm:p-5">
+    <div class="mb-3">
+        <a href="/feed/MqaVZbhO0X_O">
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 leading-tight hover:text-teal-600 transition-colors duration-200 cursor-pointer">
+                台大法律
+            </h3>
+        </a>
+    </div>
+
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3 cursor-pointer group/author">
+            <div class="relative">
+                <div class="w-11 h-11 rounded-full border-2 border-white shadow-md overflow-hidden ring-2 ring-gray-100 group-hover/author:ring-teal-100 transition-all duration-200">
+                    <div class="relative overflow-hidden flex items-center justify-center bg-orange-400 w-full h-full">
+                        <span class="text-white font-semibold" style="font-size: calc(0.4 * min(100%, 100%));">匿</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900 text-sm sm:text-base group-hover/author:text-teal-600 transition-colors">匿名</span>
+                    <a href="/feed?category=xuece_qa" class="hover:underline cursor-pointer">
+                        <span class="text-xs font-medium text-gray-600">學測討論</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock" aria-hidden="true">
+                        <path d="M12 6v6l4 2"></path>
+                        <circle cx="12" cy="12" r="10"></circle>
+                    </svg>
+                    <span>大約 3 小時前</span>
+                    <span class="text-teal-500">· 最新回覆 大約 1 小時前</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative flex items-center gap-1">
+            <button class="text-gray-300 hover:text-gray-500 p-2 rounded-full hover:bg-gray-100 transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis" aria-hidden="true">
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="19" cy="12" r="1"></circle>
+                    <circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div class="relative">
+            <p class="text-gray-800 text-base sm:text-[17px] leading-relaxed break-words whitespace-pre-wrap ">
+                台大法律系相比其他法律系最大的優勢是什麼？
+                （除了有免治馬桶以外）
+            </p>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-3 pr-2 border-t border-gray-100">
+        <div class="flex items-center gap-1">
+            <button class="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 group/btn text-gray-500 hover:bg-gray-50 hover:text-teal-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square transition-transform duration-200 group-hover/btn:scale-110" aria-hidden="true">
+                    <path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="text-sm sm:text-base font-bold">2</span>
+            </button>
+
+            <button class="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 group/btn text-gray-500 hover:bg-gray-50 hover:text-teal-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-thumbs-up transition-all duration-200 group-hover/btn:scale-110" aria-hidden="true">
+                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path>
+                    <path d="M7 10v12"></path>
+                </svg>
+                <span class="text-sm sm:text-base font-bold">0</span>
+            </button>
+
+            <div class="flex items-center gap-2 px-4 py-2 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye" aria-hidden="true">
+                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="text-sm sm:text-base font-bold">9</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1 mr-2"></div>
+    </div>
+
+    <div class="px-5 py-3 bg-gray-50/50 border-t border-gray-100">
+        <div class="space-y-2">
+            <div class="flex gap-2 p-2 rounded-lg hover:bg-gray-100/50 cursor-pointer transition-colors">
+                <div class="relative shrink-0 w-7 h-7 rounded-full overflow-visible">
+                    <div class="w-7 h-7 rounded-full overflow-hidden bg-gray-200">
+                        <div class="relative overflow-hidden bg-gray-50 w-full h-full">
+                            <img alt="安｜知名高中輔導老師" loading="lazy" decoding="async" data-nimg="fill" class="object-cover" sizes="100vw" srcset="/_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=640&amp;q=75 640w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=750&amp;q=75 750w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=828&amp;q=75 828w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=1080&amp;q=75 1080w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=1200&amp;q=75 1200w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=1920&amp;q=75 1920w" src="https://pei.com.tw/_next/image?url=%2Fapi%2Fuploads%2Favatars%2F8809026644_1771944444.jpeg&amp;w=1920&amp;q=75" style="position: absolute; height: 100%; width: 100%; inset: 0px; color: transparent;">
+                            </div>
+                        </div>
+                        <div class="absolute -bottom-0.5 -left-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check text-blue-500 fill-blue-100" aria-hidden="true">
+                                <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path>
+                                <path d="m9 12 2 2 4-4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs sm:text-sm font-medium text-gray-700">安｜知名高中輔導老師</span>
+                        <span class="text-xs sm:text-sm text-gray-500">大約 1 小時前</span>
+                    </div>
+                    <p class="text-sm sm:text-base text-gray-600 line-clamp-2">
+                        根據老師身邊的律師好友分享，臺大法律系和其他所大學的法律系差異，主要會是師資的部分，尤其未來他們可能會國考的出題教師。另外，通常法律系也會有碩班的學長姐回去幫忙帶課輔，在整理考試重點或學業的協助上也可
+                        <span class="text-teal-500 ml-1">...</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 p-2 rounded-lg hover:bg-gray-100/50 cursor-pointer transition-colors">
+                <div class="relative shrink-0 w-7 h-7 rounded-full overflow-visible">
+                    <div class="w-7 h-7 rounded-full overflow-hidden bg-gray-200">
+                        <div class="relative overflow-hidden bg-gray-50 w-full h-full">
+                            <img alt="我喜歡吃開心果 所以叫開心狗" loading="lazy" decoding="async" data-nimg="fill" class="object-cover" sizes="100vw" srcset="/_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=640&amp;q=75 640w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=750&amp;q=75 750w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=828&amp;q=75 828w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=1080&amp;q=75 1080w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=1200&amp;q=75 1200w, /_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=1920&amp;q=75 1920w" src="https://pei.com.tw/_next/image?url=%2Fapi%2Fuploads%2Favatars%2F4765770366_1772158597.jpg&amp;w=1920&amp;q=75" style="position: absolute; height: 100%; width: 100%; inset: 0px; color: transparent;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs sm:text-sm font-medium text-gray-700">我喜歡吃開心果 所以叫開心狗</span>
+                        <span class="text-xs sm:text-sm text-gray-500">大約 1 小時前</span>
+                    </div>
+                    <p class="text-sm sm:text-base text-gray-600 line-clamp-2">免治馬桶也太好笑了吧</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
