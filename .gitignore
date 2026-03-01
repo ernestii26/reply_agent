@@ -1,0 +1,40 @@
+# 環境變數（包含敏感資訊）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 虛擬環境
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日誌文件
+*.log
+agent.log
+
+# 調試文件
+debug.html
+
+# Playwright
+.playwright/
+
+# 已回覆記錄（可選，如果不想同步）
+# replied.txt
+
+# 臨時文件
+tmp/
+*.tmp
