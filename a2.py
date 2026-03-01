@@ -78,6 +78,30 @@ def ai_should_reply(title, content):
         print(f"  ⚠ AI判斷時出錯: {e}")
         return False
 
+def remove_markdown_syntax(text):
+    """移除文字中的 Markdown 格式語法"""
+    # 移除粗體 **text** 和 __text__
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    text = re.sub(r'__(.+?)__', r'\1', text)
+    
+    # 移除斜體 *text* 和 _text_
+    text = re.sub(r'\*(.+?)\*', r'\1', text)
+    text = re.sub(r'_(.+?)_', r'\1', text)
+    
+    # 移除標題符號 ## text
+    text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
+    
+    # 移除列表符號 - text 或 * text
+    text = re.sub(r'^[\-\*]\s+', '', text, flags=re.MULTILINE)
+    
+    # 移除連結 [text](url)
+    text = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', text)
+    
+    # 移除行內程式碼 `code`
+    text = re.sub(r'`(.+?)`', r'\1', text)
+    
+    return text.strip()
+
 def ai_generate_reply(title, content):
     """使用AI生成回覆內容"""
     if not model:
@@ -96,11 +120,18 @@ def ai_generate_reply(title, content):
 4. 如果是學測問題，給予鼓勵和實用建議
 5. 長度控制在100-200字
 6. 不要提到你是AI，而是以真實學長身份回答
+7. 重要：請用純文字回覆，不要使用任何 Markdown 格式（如 **粗體**、##標題、-列表 等）
+8. 不要使用特殊符號如星號、井號、底線等格式符號
 
 回覆內容："""
         
         response = model.generate_content(prompt)
-        return response.text.strip()
+        reply = response.text.strip()
+        
+        # 額外保險：移除可能殘留的 Markdown 語法
+        reply = remove_markdown_syntax(reply)
+        
+        return reply
     except Exception as e:
         print(f"  ⚠ AI生成回覆時出錯: {e}")
         return "同學你好！看到你的問題了，建議可以多參考學長姐的經驗。加油！"
