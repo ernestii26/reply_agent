@@ -28,7 +28,7 @@ class BrowserHandler:
         self.page.goto(BASE_URL)
         
         # 點擊初始登入按鈕（空白按鈕）
-        self.page.get_by_role("button").filter(has_text=re.compile(r"^$")).click()
+        # self.page.get_by_role("button").filter(has_text=re.compile(r"^$")).click()
         
         # 填寫 Email
         self.page.get_by_role("textbox", name="user@example.com").click()
@@ -119,20 +119,20 @@ class BrowserHandler:
         print(f"  🔍 check_if_already_replied: 檢查是否已以 [{user_name}] 回覆")
 
         # Step 1: 嘗試展開全部留言
-        try:
-            # 直接鎖定包含「查看全部」字眼的按鈕，避開 Regex 解析問題
-            expand_btn = self.page.locator("button:has-text('查看全部')").first
+        # try:
+        #     # 直接鎖定包含「查看全部」字眼的按鈕，避開 Regex 解析問題
+        #     # expand_btn = self.page.locator("button:has-text('查看全部')").first
             
-            # 確保按鈕有成功載入 DOM 結構中
-            expand_btn.wait_for(state="attached", timeout=3000)
-            if expand_btn.is_visible():
-                print(f"  🔍 找到「查看全部留言」按鈕，點擊展開...")
-                expand_btn.first.click()
-                time.sleep(1.5)
-            else:
-                print(f"  🔍 未找到「查看全部留言」按鈕（留言數少或不存在）")
-        except Exception as e:
-            print(f"  🔍 展開留言時出錯（忽略）: {e}")
+        #     # 確保按鈕有成功載入 DOM 結構中
+        #     expand_btn.wait_for(state="attached", timeout=3000)
+        #     if expand_btn.is_visible():
+        #         print(f"  🔍 找到「查看全部留言」按鈕，點擊展開...")
+        #         expand_btn.first.click()
+        #         time.sleep(1.5)
+        #     else:
+        #         print(f"  🔍 未找到「查看全部留言」按鈕（留言數少或不存在）")
+        # except Exception as e:
+        #     print(f"  🔍 展開留言時出錯（忽略）: {e}")
 
         # Step 2: 用 filter + regex 直接定位是否存在符合 user_name 的留言作者
         try:
