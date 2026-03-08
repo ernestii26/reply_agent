@@ -1,284 +1,165 @@
-# 自動回覆 Agent - 架構說明
+# web_agent — 自動回覆 Agent
+
+台大升學論壇（pei.com.tw）的自動巡邏 & 回覆機器人。使用 Playwright 操作瀏覽器，Google Gemini 生成回覆，Serper.dev 擴充外部知識（RAG），SQLite 儲存已回覆記錄。
+
+---
 
 ## 📁 專案結構
 
 ```
 web_agent/
-├── config/                 # 配置模組
-│   ├── __init__.py
-│   └── settings.py        # 集中所有配置參數
-│
-├── core/                   # 核心功能模組
-│   ├── __init__.py
-│   ├── ai_handler.py      # AI 處理器（判斷與生成回覆）
-│   └── browser_handler.py # 瀏覽器操作處理器
-│
-├── utils/                  # 工具模組
-│   ├── __init__.py
-│   ├── logger.py          # 日誌系統
-│   └── storage.py         # 儲存管理（已回覆記錄）
-│
-├── main.py                 # 主程式入口（簡潔的流程編排）
-├── test_ai.py             # AI 功能測試
-├── test_reply.py          # 回覆機制測試
-├── .env                   # 環境變數（EMAIL, PASSWORD, GEMINI_API_KEY）
-├── replied.txt            # 已回覆貼文 ID 記錄
-└── README.md              # 本文件
+├── config/
+│   ├── settings.py              # 所有設定集中管理
+│   └── prompts/                 # AI 提示詞檔案
+│       ├── decision_prompt.txt
+│       ├── reply_prompt.txt
+│       ├── keyword_extract_prompt.txt
+│       └── external_search_strategy_prompt.txt
+├── core/
+│   ├── ai_handler.py            # Gemini AI 判斷 & 回覆生成（多 Key 輪替）
+│   ├── browser_handler.py       # Playwright 瀏覽器自動化
+│   └── search_handler.py        # Serper RAG 外部知識增強
+├── utils/
+│   ├── logger.py                # 彩色 console + 檔案日誌
+│   └── sqlite_storage.py        # SQLite 儲存後端
+├── logs/
+│   ├── agent.log                # 執行日誌
+│   ├── debug.html               # 最後一次頁面 HTML（偵錯用）
+│   ├── storage.db               # SQLite 資料庫（回覆記錄）
+│   └── screenshots/             # 每次送出回覆後的截圖
+├── md/
+│   └── ARCHITECTURE.md          # 架構設計說明
+├── main.py                      # 主程式（流程編排）
+├── run_main.sh                  # 手動執行腳本
+├── .env                         # 環境變數（不提交到版控）
+├── .env.example                 # 環境變數範本
+└── README.md
 ```
 
-## 🎯 架構設計原則
+---
 
-### 1. **模組化 (Modularity)**
-- 每個模組職責單一明確
-- 易於測試和維護
-- 可獨立替換或升級
+## 🚀 快速開始
 
-### 2. **配置集中 (Centralized Configuration)**
-- 所有配置參數統一在 `config/settings.py`
-- 環境變數透過 `.env` 管理
-- 方便調整參數而無需修改代碼
+### 1. 安裝依賴
 
-### 3. **關注點分離 (Separation of Concerns)**
-- **config**: 配置管理
-- **core**: 業務邏輯（AI、瀏覽器操作）
-- **utils**: 基礎設施（日誌、儲存）
-- **main**: 流程編排
-
-## 📦 模組說明
-
-### `config/settings.py` - 配置管理
-集中管理所有配置參數：
-- 用戶設定（USER_NAME）
-- API 配置（GEMINI_API_KEY, GEMINI_MODEL）
-- 網站配置（BASE_URL, 選擇器）
-- 時間配置（等待時間、超時設定）
-- AI 配置（prompt 模板、回覆長度）
-
-### `core/ai_handler.py` - AI 處理器
-封裝所有 AI 相關邏輯：
-- `should_reply()`: 判斷是否需要回覆
-- `generate_reply()`: 生成回覆內容
-- `_remove_markdown()`: 移除 Markdown 格式
-- `_basic_should_reply()`: 降級方案（AI 不可用時）
-
-使用方法：
-```python
-from core.ai_handler import get_ai_handler
-
-ai = get_ai_handler()
-if ai.should_reply(title, content):
-    reply = ai.generate_reply(title, content)
-```
-
-### `core/browser_handler.py` - 瀏覽器操作處理器
-封裝所有網頁自動化操作：
-- `login()`: 登入系統
-- `navigate_to_board()`: 導航到目標討論板
-- `get_posts()`: 獲取貼文列表
-- `get_post_id/title/content()`: 提取貼文資訊
-- `check_if_already_replied()`: 檢查是否已回覆
-- `submit_reply()`: 提交回覆
-- `go_back()`: 返回列表頁
-
-使用方法：
-```python
-from core.browser_handler import BrowserHandler
-
-handler = BrowserHandler(page)
-handler.login()
-handler.navigate_to_board()
-posts = handler.get_posts()
-```
-
-### `utils/logger.py` - 日誌系統
-提供統一的日誌輸出：
-- 彩色控制台輸出（INFO/WARNING/ERROR）
-- 文件日誌記錄（完整日誌保存到 agent.log）
-- 專用方法（`success()`, `skip()`, `ai()`, `reply()`）
-
-使用方法：
-```python
-from utils.logger import get_logger
-
-logger = get_logger()
-logger.info("一般訊息")
-logger.success("操作成功")
-logger.ai("AI 分析中...")
-logger.error("發生錯誤")
-```
-
-### `utils/storage.py` - 儲存管理
-管理已回覆貼文的記錄：
-- `load()`: 讀取已記錄的貼文 ID
-- `save(post_id)`: 儲存新的貼文 ID
-- `contains(post_id)`: 檢查是否已記錄
-- `count()`: 獲取已記錄數量
-- `get_recent(n)`: 獲取最近 N 筆記錄
-
-使用方法：
-```python
-from utils.storage import get_storage
-
-storage = get_storage()
-if not storage.contains(post_id):
-    # 處理貼文
-    storage.save(post_id)
-```
-
-### `main.py` - 主程式
-簡潔的流程編排（約 130 行）：
-1. 初始化模組（logger, storage, ai, browser_handler）
-2. 登入系統
-3. 導航到目標討論板
-4. 讀取已處理記錄
-5. 逐一處理貼文
-   - 檢查是否已處理
-   - 判斷是否需要回覆
-   - 生成並提交回覆
-   - 記錄已處理貼文
-6. 輸出統計結果
-
-## 🚀 使用方式
-
-### 安裝依賴
 ```bash
 pip install playwright python-dotenv google-generativeai requests
 playwright install chromium
 ```
 
-### 配置環境變數
-編輯 `.env` 文件：
-```env
-EMAIL=your_email@example.com
-PASSWORD=your_password
-GEMINI_API_KEY=your_gemini_api_key
+### 2. 設定環境變數
+
+```bash
+cp .env.example .env
+# 編輯 .env 填入實際資訊
 ```
 
-### 執行主程式
+### 3. 執行
+
 ```bash
 python main.py
+# 或使用腳本
+bash run_main.sh
 ```
-
-### 測試 AI 功能
-```bash
-python test_ai.py
-```
-
-### 測試回覆機制
-```bash
-python test_reply.py
-```
-
-## ⚙️ 配置調整
-
-### 修改用戶名稱
-編輯 `config/settings.py`:
-```python
-USER_NAME = "你的顯示名稱"
-```
-
-### 調整等待時間
-編輯 `config/settings.py` 的 `WAIT_TIMES`:
-```python
-WAIT_TIMES = {
-    "post_list_load": 10000,  # 貼文列表載入等待時間
-    "post_detail_load": 2000,  # 貼文詳情載入等待時間
-    ...
-}
-```
-
-### 修改 AI 回覆長度
-編輯 `config/settings.py` 的 `AI_CONFIG`:
-```python
-AI_CONFIG = {
-    "reply_min_length": 100,  # 最小字數
-    "reply_max_length": 200,  # 最大字數
-    ...
-}
-```
-
-### 啟用無頭模式
-編輯 `config/settings.py` 的 `BROWSER_CONFIG`:
-```python
-BROWSER_CONFIG = {
-    "headless": True,  # 改為 True
-}
-```
-
-## 🔍 除錯與測試
-
-### 啟用調試暫停
-在 `main.py` 的 `finally` 區塊取消註解：
-```python
-browser_handler.pause()  # 取消此行註解
-```
-
-### 查看日誌文件
-```bash
-tail -f agent.log
-```
-
-### 實際提交回覆
-在 `core/browser_handler.py` 的 `submit_reply()` 方法中取消註解：
-```python
-submit_button.click()  # 取消此行註解
-```
-
-## 📊 架構優勢
-
-### 優化前（單一文件 320 行）
-❌ 所有邏輯混在一起  
-❌ 難以測試單一功能  
-❌ 配置散落各處  
-❌ 難以擴展新功能  
-
-### 優化後（模組化架構）
-✅ 職責清晰分離  
-✅ 易於單元測試  
-✅ 配置集中管理  
-✅ 易於擴展維護  
-✅ 主程式僅 130 行（減少 60%）  
-
-## 🎨 擴展建議
-
-### 添加新功能
-1. 在對應模組添加方法
-2. 在 `main.py` 中調用
-3. 在 `config/settings.py` 添加相關配置
-
-### 添加新的 AI 模型
-修改 `core/ai_handler.py`，實現不同的 AI 介面。
-
-### 添加錯誤重試機制
-在 `core/browser_handler.py` 的操作方法中添加重試邏輯。
-
-### 添加通知系統
-創建 `utils/notifier.py`，整合 Email/Webhook 通知。
-
-## 📝 維護建議
-
-1. **定期檢查選擇器**: 網站改版可能導致選擇器失效，需在 `config/settings.py` 更新
-2. **監控 API 用量**: Gemini API 有免費額度限制（1500 請求/天）
-3. **清理舊日誌**: 定期清理 `agent.log` 避免文件過大
-4. **備份記錄**: 定期備份 `replied.txt` 防止誤刪
-
-## 🐛 常見問題
-
-### Q: 找不到模組錯誤
-A: 確保在專案根目錄執行 `python main.py`，且各目錄下都有 `__init__.py`
-
-### Q: AI 不回覆
-A: 檢查 `.env` 中的 `GEMINI_API_KEY` 是否正確設定
-
-### Q: 無法送出回覆
-A: 檢查 `browser_handler.py` 中的 `submit_button.click()` 是否被註解
-
-### Q: 重複回覆同一貼文
-A: 檢查 `replied.txt` 是否正常寫入，權限是否正確
 
 ---
 
-**優化完成時間**: 2026-03-01  
-**架構版本**: 2.0  
-**原始版本**: a2.py (320 lines, monolithic)  
-**優化版本**: main.py (130 lines, modular) + 6 模組文件
+## ⚙️ 環境變數說明
+
+| 變數 | 必填 | 說明 |
+|------|------|------|
+| `EMAIL` | ✅ | 論壇登入 Email |
+| `PASSWORD` | ✅ | 論壇登入密碼 |
+| `GEMINI_API_KEY` | ✅（若未設定 `GEMINI_API_KEYS`）| 單一 Gemini API Key |
+| `GEMINI_API_KEYS` | 可選 | 多 Key 輪替，JSON 陣列或逗號分隔（見下方說明） |
+| `SERPER_API_KEY` | 可選 | Serper.dev 搜尋 Key，缺少時停用外部知識增強 |
+
+### 多 Key 輪替格式
+
+```env
+# JSON 陣列格式
+GEMINI_API_KEYS=["AIzaSy...", "AIzaSy...", "AIzaSy..."]
+
+# 逗號分隔格式
+GEMINI_API_KEYS=AIzaSy...,AIzaSy...,AIzaSy...
+```
+
+當某個 Key 失敗時，程式**立即**切換至下一個 Key 並重試，不等待。所有 Key 皆失敗時程式退出（`sys.exit(1)`）。
+
+---
+
+## 🔧 常用設定（`config/settings.py`）
+
+### 模擬模式 / 實際發文
+
+```python
+BROWSER_CONFIG = {
+    "dry_run": True,   # True = 模擬（不真正送出），False = 實際發文
+    "max_replies_per_run": 8,  # 每次執行最多回覆篇數，0 = 不限
+    "headless": True,
+}
+```
+
+### 回覆長度
+
+```python
+AI_CONFIG = {
+    "reply_min_length": 100,
+    "reply_max_length": 200,
+}
+```
+
+### 巡邏模式
+
+```python
+AGENT_PATROL_CONFIG = {
+    "mode": "keyword",  # "keyword"（關鍵字搜尋）或 "board"（直接瀏覽最新貼文）
+    "target_keywords": ["資工", "電機", "物理", "學測"],
+}
+```
+
+---
+
+## 🤖 API 輪替機制
+
+`AIHandler` 與 `SearchHandler` 均使用 `GEMINI_API_KEYS_LIST`：
+
+1. 啟動時依序測試每個 Key，使用第一個成功的
+2. 任何一次 API 呼叫失敗，**立即切換**到下一個 Key 重試
+3. 所有 Key 用盡才終止程式
+
+---
+
+## 📊 資料儲存
+
+所有記錄儲存於 `logs/storage.db`（SQLite）：
+
+- `replied_posts` — 已回覆的貼文 ID（防止重複）
+- `replies_log` — 完整回覆記錄（post_id、標題、回覆內容、時間）
+
+---
+
+## 🪵 日誌
+
+```bash
+tail -f logs/agent.log   # 即時查看執行日誌
+```
+
+截圖保存於 `logs/screenshots/`，每次送出回覆後自動截圖。
+
+---
+
+## 🐛 常見問題
+
+**Q: 所有 Gemini Key 都失敗，程式退出**  
+A: 確認 `.env` 内的 Key 有效，且 Gemini API 配額未超過
+
+**Q: 找不到貼文 / 選擇器失效**  
+A: 網站改版時更新 `config/settings.py` 中的 `SELECTORS`
+
+**Q: SERPER_API_KEY 未設定**  
+A: 程式會跳過外部知識增強，仍可正常回覆（品質略降）
+
+**Q: 重複回覆同一篇貼文**  
+A: 確認 `logs/storage.db` 存在且可寫入；資料庫損壞時可刪除後重建
+

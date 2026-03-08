@@ -26,7 +26,22 @@ class BrowserHandler:
         """執行登入流程"""
         # 前往首頁
         self.page.goto(BASE_URL)
-        
+        time.sleep(2)
+        # 嘗試關閉可能出現的系統公告 / 彈跳視窗
+        try:
+            # 選取包含關閉圖示（X）的按鈕並點擊
+            close_btn = self.page.locator("button:has(svg.lucide-x)").first
+            if close_btn and close_btn.count() > 0 and close_btn.is_visible():
+                try:
+                    close_btn.click()
+                    # time.sleep(0.5)
+                    print("已點擊公告關閉按鈕")
+                except Exception as e:
+                    print(f"忽略公告關閉按鈕點擊錯誤: {e}")
+        except Exception:
+            # 任何錯誤都不應阻塞後續登入流程
+            pass
+        # time.sleep(10)
         # 點擊初始登入按鈕（空白按鈕）
         # self.page.get_by_role("button").filter(has_text=re.compile(r"^$")).click()
         

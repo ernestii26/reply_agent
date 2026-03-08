@@ -22,10 +22,10 @@ def _load_prompt(filename: str, default: str) -> str:
         return default
 # ==================== 瀏覽器配置 ====================
 BROWSER_CONFIG = {
-    "headless": False,  # 是否使用無頭模式
+    "headless": True,  # 是否使用無頭模式
     "slow_mo": 0,  # 減慢操作速度（毫秒），用於調試
     "dry_run": False,  # True = 模擬模式（不實際發文）；改為 False 才會真正送出回覆
-    "max_replies_per_run": 6,  # 每次執行最多回覆幾篇；設為 0 表示不限制
+    "max_replies_per_run": 3,  # 每次執行最多回覆幾篇；設為 0 表示不限制
 }
 
 # ==================== 用戶配置 ====================
@@ -36,6 +36,30 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # GEMINI_MODEL = "gemma-3-4b-it"
 GEMINI_MODEL = "gemini-2.5-flash"
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+# 支持多個 GEMINI API KEY（用逗號分隔），若未設定則回退到單一 GEMINI_API_KEY
+GEMINI_API_KEYS_RAW = os.getenv("GEMINI_API_KEYS")
+GEMINI_API_KEYS_LIST = []
+if GEMINI_API_KEYS_RAW:
+    s = GEMINI_API_KEYS_RAW.strip()
+    parsed = None
+    # 嘗試解析為 Python/JSON 陣列，例如：["key1","key2"]（支援換行與空白）
+    try:
+        import ast
+        parsed = ast.literal_eval(s)
+    except Exception:
+        try:
+            import json
+            parsed = json.loads(s)
+        except Exception:
+            parsed = None
+
+    if isinstance(parsed, (list, tuple)):
+        GEMINI_API_KEYS_LIST = [str(k).strip() for k in parsed if k]
+    else:
+        # 回退到逗號分隔的格式
+        GEMINI_API_KEYS_LIST = [k.strip() for k in s.split(",") if k.strip()]
+elif GEMINI_API_KEY:
+    GEMINI_API_KEYS_LIST = [GEMINI_API_KEY]
 
 # 登入憑證
 EMAIL = os.getenv("EMAIL")
@@ -132,8 +156,8 @@ AI_CONFIG = {
 
 # ==================== 代理巡邏配置 ====================
 AGENT_PATROL_CONFIG = {
-    "mode": "keyword",  # 模式選擇："keyword" (關鍵字搜尋) 或 "board" (直接瀏覽最新貼文)
-    "target_keywords": ["資工", "電機", "物理","數學", "化學", "理工", "數學", "學測"],
+    "mode": "board",  # 模式選擇："keyword" (關鍵字搜尋) 或 "board" (直接瀏覽最新貼文)
+    "target_keywords": ["資工", "電機", "物理","數學", "理科", "化學", "理工", "數學", "學測"],
 }
 
 # ==================== 回覆貼文時用來外部搜尋配置 ====================
@@ -184,10 +208,14 @@ SEARCH_CONFIG = {
 
 # ==================== 檔案配置 ====================
 FILES = {
-    "replied_posts": "logs/replied.txt",        # 已回覆貼文記錄文件
     "debug_html": "logs/debug.html",            # 除錯用 HTML 文件
     "log_file": "logs/agent.log",               # 日誌文件
-    "replies_log": "logs/replies_log.jsonl",    # 回覆內容完整記錄（JSON Lines）
     "screenshots_dir": "logs/screenshots",      # 送出回覆後的截圖資料夾
+    "db_path": "logs/storage.db",               # SQLite DB 檔案
+}
+
+# 儲存後端：固定使用 SQLite
+STORAGE = {
+    "backend": "sqlite"
 }
 

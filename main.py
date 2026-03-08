@@ -8,7 +8,7 @@ import time
 # 導入自定義模組
 from config.settings import BROWSER_CONFIG, WAIT_TIMES, AI_CONFIG, AGENT_PATROL_CONFIG
 from utils.logger import get_logger
-from utils.storage import get_storage
+from utils.sqlite_storage import SQLitePostStorage
 from core.ai_handler import get_ai_handler
 from core.browser_handler import BrowserHandler
 from core.search_handler import create_search_handler
@@ -18,7 +18,7 @@ def run(playwright: Playwright) -> None:
     """主執行流程"""
     # 初始化模組
     logger = get_logger()
-    storage = get_storage()
+    storage = SQLitePostStorage()
     ai = get_ai_handler()
     
     # 啟動瀏覽器

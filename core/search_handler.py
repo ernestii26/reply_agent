@@ -7,35 +7,55 @@ import json
 import re
 import requests
 import google.generativeai as genai
-from config.settings import GEMINI_API_KEY, GEMINI_MODEL, SEARCH_CONFIG, SERPER_API_KEY
+from config.settings import GEMINI_API_KEYS_LIST, GEMINI_MODEL, SEARCH_CONFIG, SERPER_API_KEY
 
 
 class SearchHandler:
     """搜尋處理類，負責透過 Serper API 取得外部知識（RAG）。"""
 
     def __init__(self):
-        """初始化搜尋處理器"""
+        """初始化搜尋處理器，支援多 API Key 輪替"""
         self.model = None
-        self.model_with_search = None
         self.enabled = False
-        
-        if GEMINI_API_KEY:
-            try:
-                genai.configure(api_key=GEMINI_API_KEY)
-                
-                # 一般模型用於關鍵字提取與搜尋策略生成
-                self.model = genai.GenerativeModel(GEMINI_MODEL)
-                
-                # 改用 Serper API 作為外部搜尋
-                if SEARCH_CONFIG["enable_external_search"] and not SERPER_API_KEY:
-                    print("警告：啟用了外部網路搜尋，但未設定 SERPER_API_KEY")
-                
-                self.enabled = True
-            except Exception as e:
-                print(f"警告：初始化搜尋處理器失敗: {e}")
-                self.enabled = False
+        self.api_keys = GEMINI_API_KEYS_LIST or []
+        self.current_key_index = 0
+
+        if self.api_keys:
+            for i, key in enumerate(self.api_keys):
+                if self._configure_with_key(key):
+                    self.current_key_index = i
+                    break
+            if not self.enabled:
+                print("警告：所有 GEMINI API Key 均初始化失敗，搜尋功能將無法使用")
+
+            if SEARCH_CONFIG["enable_external_search"] and not SERPER_API_KEY:
+                print("警告：啟用了外部網路搜尋，但未設定 SERPER_API_KEY")
         else:
             print("警告：未設定 GEMINI_API_KEY，搜尋功能將無法使用")
+
+    def _configure_with_key(self, key: str) -> bool:
+        """嘗試用指定 key 初始化 Gemini model，成功返回 True，失敗返回 False"""
+        try:
+            genai.configure(api_key=key)
+            self.model = genai.GenerativeModel(GEMINI_MODEL)
+            self.enabled = True
+            return True
+        except Exception as e:
+            print(f"警告：SearchHandler 使用指定 GEMINI API Key 初始化失敗: {e}")
+            self.enabled = False
+            return False
+
+    def _switch_api_key(self) -> bool:
+        """切換到下一個可用的 API Key，成功返回 True"""
+        if not self.api_keys or len(self.api_keys) <= 1:
+            return False
+        start = self.current_key_index
+        for offset in range(1, len(self.api_keys)):
+            idx = (start + offset) % len(self.api_keys)
+            if self._configure_with_key(self.api_keys[idx]):
+                self.current_key_index = idx
+                return True
+        return False
     
     def extract_keywords(self, title: str, content: str) -> str:
         """
@@ -57,12 +77,17 @@ class SearchHandler:
                 title=title,
                 content=content
             )
-            
             response = self.model.generate_content(prompt)
-            keywords = response.text.strip()
-            return keywords
+            return response.text.strip()
         except Exception as e:
             print(f"  ⚠ 提取關鍵字時出錯: {e}")
+            if self._switch_api_key():
+                try:
+                    prompt = SEARCH_CONFIG["keyword_extract_prompt"].format(title=title, content=content)
+                    response = self.model.generate_content(prompt)
+                    return response.text.strip()
+                except Exception as e2:
+                    print(f"  ⚠ 切換 Key 後仍失敗: {e2}")
             return title[:10] if title else content[:10]
     
     def search_external_knowledge(self, title: str, content: str) -> str:
@@ -86,7 +111,15 @@ class SearchHandler:
                 title=title,
                 content=content
             )
-            strategy_response = self.model.generate_content(prompt)
+            try:
+                strategy_response = self.model.generate_content(prompt)
+            except Exception as e_gen:
+                print(f"  ⚠ 搜尋策略生成失敗: {e_gen}")
+                if self._switch_api_key():
+                    print(f"  ↺ 已切換至 Key #{self.current_key_index}，重試")
+                    strategy_response = self.model.generate_content(prompt)
+                else:
+                    return ""
             strategy_text = strategy_response.text.strip()
 
             # 用 regex 抷出 JSON 主體，避免 Gemini 輸出格式不固定導致 json.loads 失敗

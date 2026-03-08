@@ -1,183 +1,101 @@
-# 架構優化總結
+# 架構說明
 
-## 📊 優化成果對比
-
-### 代碼行數統計
-
-#### 優化前（單一文件）
-```
-a2.py: 320 行
-- 所有功能混在一起
-- 難以維護和測試
-```
-
-#### 優化後（模組化架構）
-```
-main.py:              135 行  ⬇️ 減少 58%（主程式更簡潔）
-config/settings.py:   110 行  📋 配置集中管理
-core/ai_handler.py:   165 行  🤖 AI 邏輯封裝
-core/browser_handler.py: 260 行  🌐 瀏覽器操作封裝
-utils/logger.py:      167 行  📝 日誌系統
-utils/storage.py:     157 行  💾 儲存管理
-─────────────────────────────
-總計:                 994 行  （但結構清晰，易於維護）
-```
-
-## 🎯 架構改進清單
-
-### ✅ 已完成的優化
-
-1. **配置集中化** (`config/settings.py`)
-   - 所有配置參數統一管理
-   - 選擇器、時間、AI 配置分類清晰
-   - 環境變數集中載入
-
-2. **AI 邏輯封裝** (`core/ai_handler.py`)
-   - `should_reply()` - 判斷是否回覆
-   - `generate_reply()` - 生成回覆內容
-   - `_remove_markdown()` - 移除 Markdown 格式
-   - 降級方案（AI 不可用時）
-
-3. **瀏覽器操作封裝** (`core/browser_handler.py`)
-   - `login()` - 登入流程
-   - `navigate_to_board()` - 導航操作
-   - `get_posts()` / `get_post_id/title/content()` - 資料提取
-   - `submit_reply()` - 回覆提交（多種按鈕定位方式）
-   - `check_if_already_replied()` - 重複檢查
-
-4. **日誌系統** (`utils/logger.py`)
-   - 彩色控制台輸出（分級顯示）
-   - 文件日誌記錄（agent.log）
-   - 專用方法：success, skip, ai, reply 等
-   - 統計摘要輸出
-
-5. **儲存管理** (`utils/storage.py`)
-   - `load()` / `save()` - 讀寫已回覆記錄
-   - `contains()` - O(1) 快速查詢
-   - `get_recent()` - 獲取最近記錄
-   - 快取機制（避免重複讀檔）
-
-6. **主程式簡化** (`main.py`)
-   - 從 320 行減少到 135 行
-   - 只負責流程編排
-   - 清晰的步驟標示（1-7）
-   - 統一的錯誤處理
-
-## 🏗️ 架構圖
+## 模組概覽
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   main.py                       │
-│          (135 lines - 流程編排)                  │
-│  ┌─────────────────────────────────────────┐   │
-│  │ 1. 初始化模組                            │   │
-│  │ 2. 登入系統                              │   │
-│  │ 3. 導航到討論板                          │   │
-│  │ 4. 讀取已處理記錄                        │   │
-│  │ 5. 逐一處理貼文                          │   │
-│  │ 6. 輸出統計結果                          │   │
-│  │ 7. 清理資源                              │   │
-│  └─────────────────────────────────────────┘   │
-└──────────────┬──────────────┬─────────────┬────┘
-               │              │             │
-    ┌──────────▼─────┐  ┌────▼────┐  ┌────▼────┐
-    │   core/        │  │ utils/  │  │ config/ │
-    │                │  │         │  │         │
-    │ ai_handler     │  │ logger  │  │settings │
-    │ (165 lines)    │  │(167 ln) │  │(110 ln) │
-    │                │  │         │  │         │
-    │ browser_handler│  │ storage │  │         │
-    │ (260 lines)    │  │(157 ln) │  │         │
-    └────────────────┘  └─────────┘  └─────────┘
+main.py
+  └─ 流程編排：登入 → 巡邏 → 判斷 → 搜尋 → 生成回覆 → 送出 → 儲存
+
+config/
+  └─ settings.py        所有設定集中管理（API keys、選擇器、等待時間、prompt 模板）
+  └─ prompts/           AI 提示詞文字檔（獨立維護，避免硬碼在程式中）
+
+core/
+  └─ ai_handler.py      Gemini 多 Key 輪替；should_reply() 判斷；generate_reply() 生成回覆
+  └─ browser_handler.py Playwright 操作封裝（登入、導覽、取得貼文、送出回覆）
+  └─ search_handler.py  Serper RAG 增強（多 Key 輪替；外部搜尋→格式化→傳給 AI）
+
+utils/
+  └─ logger.py          彩色 console + 滾動 file log（logs/agent.log）
+  └─ sqlite_storage.py  SQLite 儲存後端（WAL 模式；唯一索引防重複回覆）
+
+logs/
+  └─ storage.db         已回覆記錄（replied_posts + replies_log 兩張表）
+  └─ agent.log          執行日誌
+  └─ debug.html         最後一次頁面 HTML（偵錯用）
+  └─ screenshots/       每次送出後自動截圖
 ```
-
-## 💡 主要優勢
-
-### 1. 可維護性 ⬆️
-- **優化前**: 修改某個功能要在 320 行中尋找
-- **優化後**: 直接定位到對應模組文件
-
-### 2. 可測試性 ⬆️
-- **優化前**: 難以單獨測試某個功能
-- **優化後**: 每個模組可獨立測試
-
-### 3. 可擴展性 ⬆️
-- **優化前**: 新增功能導致文件更加臃腫
-- **優化後**: 在對應模組添加方法即可
-
-### 4. 可讀性 ⬆️
-- **優化前**: 320 行難以快速理解整體流程
-- **優化後**: main.py 135 行清晰展示流程
-
-### 5. 配置靈活性 ⬆️
-- **優化前**: 配置散落在代碼各處
-- **優化後**: config/settings.py 統一管理
-
-## 📈 效能提升
-
-### 記憶體使用
-- 模組按需載入，避免全域變數過多
-- Storage 使用快取機制，減少重複讀檔
-
-### 代碼複用
-- 日誌、儲存、AI、瀏覽器操作均可在其他專案複用
-- 降低耦合度，提高代碼價值
-
-### 錯誤處理
-- 統一的錯誤處理流程
-- 分層錯誤處理（模組內 + main）
-
-## 🔄 遷移指南
-
-如果你有舊版本的 a2.py，遷移到新架構：
-
-1. **保留舊文件備份**
-   ```bash
-   cp a2.py a2.py.backup
-   ```
-
-2. **使用新的 main.py**
-   ```bash
-   python main.py
-   ```
-
-3. **自定義配置**
-   - 修改 `config/settings.py` 中的參數
-   - 更新 `.env` 環境變數
-
-4. **測試功能**
-   ```bash
-   python test_ai.py      # 測試 AI
-   python test_reply.py   # 測試回覆機制
-   ```
-
-## 🎓 學習路徑
-
-如果想深入理解架構設計：
-
-1. **先讀**: `README.md` - 了解整體架構
-2. **再讀**: `config/settings.py` - 了解配置結構
-3. **然後**: `utils/logger.py` - 了解日誌設計
-4. **接著**: `core/ai_handler.py` - 了解 AI 封裝
-5. **最後**: `main.py` - 理解流程編排
-
-## 📌 注意事項
-
-1. **實際回覆需取消註解**
-   - `core/browser_handler.py` 第 140 行: `submit_button.click()`
-
-2. **調試模式需取消註解**
-   - `main.py` 第 130 行: `browser_handler.pause()`
-
-3. **環境變數必須設定**
-   - 確保 `.env` 包含 `EMAIL`, `PASSWORD`, `GEMINI_API_KEY`
-
-4. **選擇器可能需要更新**
-   - 網站改版時更新 `config/settings.py` 中的 `SELECTORS`
 
 ---
 
-**優化完成**: 2026-03-01  
-**創建者**: GitHub Copilot (Claude Sonnet 4.5)  
-**架構版本**: 2.0  
-**主要改進**: 模組化、配置集中化、關注點分離
+## API 輪替流程
+
+```
+初始化
+  for each key in GEMINI_API_KEYS_LIST:
+      if _configure_with_key(key): break   ← 使用第一個成功的 key
+
+呼叫 API 失敗
+  → switch_api_key()                       ← 立即切換，不等待
+      → 從 current_key_index + 1 開始輪替
+      → 若找到可用 key：return True → 重試
+      → 若所有 key 均失敗：
+          generate_reply()  → sys.exit(1)
+          should_reply()    → fallback 到 _basic_should_reply()（關鍵字比對）
+          SearchHandler     → return "" 空字串
+```
+
+---
+
+## 資料流
+
+```
+main.py
+  1. SQLitePostStorage.contains(post_id)    ← 已處理則跳過
+  2. AIHandler.should_reply(title, content) ← 不需要回覆則跳過
+  3. SearchHandler.get_enriched_context()   ← Serper API 取外部知識
+  4. SearchHandler.format_context_for_ai()  ← 組合原始內容 + 外部知識
+  5. AIHandler.generate_reply(enriched)     ← Gemini 生成回覆
+  6. BrowserHandler.submit_reply(reply)     ← Playwright 送出（dry_run=True 則跳過）
+  7. SQLitePostStorage.save(post_id)        ← 記錄已處理
+  8. SQLitePostStorage.save_reply(...)      ← 儲存完整回覆內容
+```
+
+---
+
+## SQLite 資料庫結構
+
+```sql
+-- 已回覆貼文（防重複）
+CREATE TABLE replied_posts (
+    post_id   TEXT PRIMARY KEY,
+    timestamp TEXT,
+    source    TEXT DEFAULT 'agent'
+);
+
+-- 完整回覆記錄
+CREATE TABLE replies_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id    TEXT,
+    title      TEXT,
+    reply      TEXT,
+    timestamp  TEXT,
+    reply_hash TEXT
+);
+CREATE UNIQUE INDEX idx_reply_dedup ON replies_log (post_id, reply_hash);
+```
+
+---
+
+## 設定調整速查
+
+| 目的 | 位置 |
+|------|------|
+| API key 輪替 | `.env` → `GEMINI_API_KEYS` |
+| 模擬 / 實際發文 | `config/settings.py` → `BROWSER_CONFIG["dry_run"]` |
+| 每次回覆上限 | `config/settings.py` → `BROWSER_CONFIG["max_replies_per_run"]` |
+| 巡邏關鍵字 | `config/settings.py` → `AGENT_PATROL_CONFIG["target_keywords"]` |
+| 回覆字數範圍 | `config/settings.py` → `AI_CONFIG["reply_min/max_length"]` |
+| AI 提示詞 | `config/prompts/*.txt` |
+| 頁面選擇器 | `config/settings.py` → `SELECTORS` |
+| 等待時間 | `config/settings.py` → `WAIT_TIMES` |
