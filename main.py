@@ -51,31 +51,42 @@ def run(playwright: Playwright) -> None:
         patrol_mode = AGENT_PATROL_CONFIG.get("mode", "board")
         target_keywords = AGENT_PATROL_CONFIG.get("target_keywords", ["二類"])
         processed_count, skipped_count, replied_count = 0, 0, 0
-        max_replies = BROWSER_CONFIG["max_replies_per_run"]
+        min_replies = BROWSER_CONFIG["min_replies_per_run"]
 
-        if max_replies > 0:
-            logger.info(f"  本次最多回覆 {max_replies} 篇")
+        if min_replies > 0:
+            logger.info(f"  本次至少回覆 {min_replies} 篇")
 
         # 定義內部函式：負責處理傳入的貼文列表（避免程式碼重複）
         def process_posts_list(posts_list):
             nonlocal processed_count, skipped_count, replied_count
-            for i, post in enumerate(posts_list, 1):
-                if max_replies > 0 and replied_count >= max_replies:
-                    return True # 回傳 True 代表已達上限，通知外層停止
+            # 先把所有 ID、標題、URL 一次性提取（避免導航後 DOM 虛擬化失效）
+            post_metas = []
+            for post in posts_list:
                 try:
-                    post_id = browser_handler.get_post_id(post)
-                    title = browser_handler.get_post_title(post)
-                    
-                    logger.post_header(i, len(posts_list), post_id)
+                    post_metas.append((
+                        browser_handler.get_post_id(post),
+                        browser_handler.get_post_title(post),
+                        browser_handler.get_post_url(post),
+                    ))
+                except Exception:
+                    continue
+
+            for i, (post_id, title, post_url) in enumerate(post_metas, 1):
+                try:
+                    logger.post_header(i, len(post_metas), post_id)
                     logger.post_title(title)
                     
                     if storage.contains(post_id):
                         logger.skip("此貼文已處理過，跳過")
                         skipped_count += 1
                         continue
-                    
-                    logger.action("點擊進入貼文...")
-                    browser_handler.click_post(post)
+
+                    if not post_url:
+                        logger.error(f"無法取得貼文 {post_id} 的 URL，跳過")
+                        continue
+
+                    logger.action("進入貼文...")
+                    browser_handler.navigate_to_post(post_url)
                     
                     if browser_handler.check_if_already_replied():
                         logger.success("已回覆過此貼文，記錄並跳過")
@@ -112,11 +123,6 @@ def run(playwright: Playwright) -> None:
                             logger.action(f"等待 {WAIT_TIMES['after_submit_screenshot'] // 1000} 秒後截圖...")
                             time.sleep(WAIT_TIMES["after_submit_screenshot"] / 1000)
                             browser_handler.take_screenshot(post_id)
-                            
-                            if max_replies > 0 and replied_count >= max_replies:
-                                logger.info(f"  ✓ 已達本次回覆上限（{max_replies} 篇），結束處理")
-                                browser_handler.go_back()
-                                return True
                         else:
                             storage.save(post_id)
                     else:
@@ -130,12 +136,13 @@ def run(playwright: Playwright) -> None:
                 except Exception as e:
                     logger.error(f"處理貼文時出錯: {e}")
                     continue
-            return False
 
         # 4. 根據模式執行對應邏輯
         if patrol_mode == "keyword":
             logger.info("\n步驟 2: [關鍵字模式] 啟動")
             for query in target_keywords:
+                if min_replies > 0 and replied_count >= min_replies:
+                    break
                 logger.info(f"\n🔍 開始搜尋關鍵字: {query}")
                 browser_handler.navigate_to_board() 
                 
@@ -144,16 +151,32 @@ def run(playwright: Playwright) -> None:
                     
                 posts = browser_handler.get_posts()
                 logger.section(f"「{query}」找到 {len(posts)} 個貼文，開始處理")
-                
-                # 執行貼文處理，若達到上限則中斷迴圈
-                if process_posts_list(posts):
-                    break
+                process_posts_list(posts)
+            if min_replies > 0 and replied_count >= min_replies:
+                logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇）")
         else:
             logger.info("\n步驟 2: [一般模式] 直接瀏覽討論板最新貼文")
             browser_handler.navigate_to_board()
-            posts = browser_handler.get_posts()
-            logger.section(f"找到 {len(posts)} 個貼文，開始處理")
-            process_posts_list(posts)
+            seen_post_ids = set()
+            while True:
+                posts = browser_handler.get_posts()
+                new_posts = [p for p in posts if browser_handler.get_post_id(p) not in seen_post_ids]
+                for p in new_posts:
+                    seen_post_ids.add(browser_handler.get_post_id(p))
+
+                if new_posts:
+                    logger.section(f"找到 {len(new_posts)} 個新貼文，開始處理")
+                    process_posts_list(new_posts)
+
+                if min_replies <= 0 or replied_count >= min_replies:
+                    if min_replies > 0:
+                        logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇）")
+                    break
+
+                logger.info(f"  ℹ 目前已回覆 {replied_count} 篇，目標 {min_replies} 篇，嘗試載入更多貼文...")
+                if not browser_handler.scroll_load_more():
+                    logger.info("  ℹ 已無更多貼文可載入")
+                    break
             
         # 5. 輸出統計結果
         total_recorded = len(storage.load())

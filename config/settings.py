@@ -25,7 +25,7 @@ BROWSER_CONFIG = {
     "headless": True,  # 是否使用無頭模式
     "slow_mo": 0,  # 減慢操作速度（毫秒），用於調試
     "dry_run": False,  # True = 模擬模式（不實際發文）；改為 False 才會真正送出回覆
-    "max_replies_per_run": 3,  # 每次執行最多回覆幾篇；設為 0 表示不限制
+    "min_replies_per_run": 8,  # 每次執行至少回覆幾篇（會自動捲動載入更多貼文）；設為 0 表示不限制
 }
 
 # ==================== 用戶配置 ====================
@@ -108,6 +108,7 @@ WAIT_TIMES = {
     "button_check_interval": 500,   # 檢查按鈕狀態間隔（毫秒）
     "after_submit": 2000,           # 提交後等待（毫秒）
     "after_submit_screenshot": 10000,  # 送出後截圖前的等待時間（毫秒）
+    "scroll_load_wait": 2500,       # 捲動後等待新貼文載入（毫秒）
 }
 
 # ==================== AI 配置 ====================
@@ -147,7 +148,7 @@ reply_default = """
     """
 
 AI_CONFIG = {
-    "reply_min_length": 100,  # 回覆最小字數
+    "reply_min_length": 30,  # 回覆最小字數
     "reply_max_length": 200,  # 回覆最大字數
     "decision_prompt_template": _load_prompt("decision_prompt.txt", decision_default),
     "reply_prompt_template": _load_prompt("reply_prompt.txt", reply_default),

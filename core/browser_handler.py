@@ -87,6 +87,24 @@ class BrowserHandler:
             貼文 ID
         """
         return post.get_attribute("data-post-id")
+
+    def get_post_by_id(self, post_id: str):
+        """
+        在當前頁面上透過 data-post-id 屬性重新定位元素（避免 stale locator）
+
+        Args:
+            post_id: 貼文 ID
+
+        Returns:
+            Locator 元素，若不存在則回傳 None
+        """
+        try:
+            loc = self.page.locator(f"div[data-post-id='{post_id}']").first
+            if loc.count() > 0:
+                return loc
+            return None
+        except Exception:
+            return None
     
     def get_post_title(self, post) -> str:
         """
@@ -100,6 +118,38 @@ class BrowserHandler:
         """
         return post.locator(SELECTORS["post_title"]).inner_text()
     
+    def get_post_url(self, post) -> str:
+        """
+        從列表頁取得貼文的直接連結 URL
+
+        Args:
+            post: 貼文元素
+
+        Returns:
+            完整 URL 字串，失敗時回傳空字串
+        """
+        try:
+            href = post.locator(SELECTORS["post_link"]).first.get_attribute("href")
+            if not href:
+                return ""
+            if href.startswith("http"):
+                return href
+            # 相對路徑轉絕對路徑
+            from urllib.parse import urljoin
+            return urljoin(BASE_URL, href)
+        except Exception:
+            return ""
+
+    def navigate_to_post(self, url: str):
+        """
+        直接以 URL 進入貼文詳情（不依賴列表頁 DOM）
+
+        Args:
+            url: 貼文完整 URL
+        """
+        self.page.goto(url)
+        time.sleep(WAIT_TIMES["post_detail_load"] / 1000)
+
     def click_post(self, post):
         """
         點擊進入貼文詳情
@@ -374,6 +424,30 @@ class BrowserHandler:
         except Exception as e:
             print(f"警告：保存 debug HTML 時出錯: {e}")
     
+    def scroll_load_more(self) -> bool:
+        """
+        點擊「載入更多」按鈕後向下滾動，等待新貼文出現。
+
+        Returns:
+            是否成功載入更多貼文
+        """
+        try:
+            before_count = self.page.locator(SELECTORS["post_container"]).count()
+            # 先嘗試點擊「載入更多」按鈕
+            load_more_btn = self.page.locator("button:has-text('載入更多')").first
+            if load_more_btn.count() > 0 and load_more_btn.is_visible():
+                print("  🔄 點擊「載入更多」按鈕...")
+                load_more_btn.click()
+            else:
+                # 按鈕不存在時fallback到滾動
+                self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            time.sleep(WAIT_TIMES["scroll_load_wait"] / 1000)
+            after_count = self.page.locator(SELECTORS["post_container"]).count()
+            return after_count > before_count
+        except Exception as e:
+            print(f"  ⚠ 捲動載入更多時出錯: {e}")
+            return False
+
     def pause(self):
         """暫停執行（用於調試）"""
         self.page.pause()
