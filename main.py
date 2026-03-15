@@ -123,6 +123,11 @@ def run(playwright: Playwright) -> None:
                             logger.action(f"等待 {WAIT_TIMES['after_submit_screenshot'] // 1000} 秒後截圖...")
                             time.sleep(WAIT_TIMES["after_submit_screenshot"] / 1000)
                             browser_handler.take_screenshot(post_id)
+                            
+                            # 檢查是否達到回覆目標
+                            if min_replies > 0 and replied_count >= min_replies:
+                                logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇），停止處理此關鍵字")
+                                break
                         else:
                             storage.save(post_id)
                     else:

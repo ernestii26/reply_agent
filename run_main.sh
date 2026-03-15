@@ -8,5 +8,5 @@ cd /home/ernestii26/Desktop/web_agent
 
 # 3. 激活環境並執行程式
 conda activate web_agent
-echo "--- Run started at $(date) ---" >> /home/ernestii26/Desktop/web_agent/auto_run.log
-python3 main.py > /home/ernestii26/Desktop/web_agent/auto_run.log 2>&1
+echo "--- Run started at $(date) ---" > /home/ernestii26/Desktop/web_agent/auto_run.log
+python3 main.py >> /home/ernestii26/Desktop/web_agent/auto_run.log 2>&1
