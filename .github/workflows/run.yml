@@ -15,12 +15,25 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'  # 快取 pip 套件
 
       - name: 安裝套件
         run: pip install -r requirements.txt
 
+      - name: 快取 Playwright 瀏覽器
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('requirements.txt') }}
+
       - name: 安裝 Playwright 瀏覽器
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: playwright install chromium --with-deps
+
+      - name: 安裝 Playwright 系統依賴
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: playwright install-deps chromium
 
       - name: 從 Google Drive 下載資料庫
         run: python -m utils.drive_sync download
