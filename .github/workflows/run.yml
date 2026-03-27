@@ -1,0 +1,50 @@
+name: 自動回覆 Agent
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 每天台灣時間 09:00 (UTC 01:00)
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 安裝 Playwright 瀏覽器
+        run: playwright install chromium --with-deps
+
+      - name: 從 Google Drive 下載資料庫
+        run: python -m utils.drive_sync download
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          GDRIVE_DB_FOLDER_ID: ${{ secrets.GDRIVE_DB_FOLDER_ID }}
+          GDRIVE_SCREENSHOTS_FOLDER_ID: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID }}
+
+      - name: 執行 Agent
+        run: python main.py
+        env:
+          EMAIL: ${{ secrets.EMAIL }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+
+      - name: 上傳資料庫與截圖到 Google Drive
+        if: always()
+        run: python -m utils.drive_sync upload
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+          GDRIVE_DB_FOLDER_ID: ${{ secrets.GDRIVE_DB_FOLDER_ID }}
+          GDRIVE_SCREENSHOTS_FOLDER_ID: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID }}

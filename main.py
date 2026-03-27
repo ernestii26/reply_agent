@@ -187,9 +187,6 @@ def run(playwright: Playwright) -> None:
         total_recorded = len(storage.load())
         logger.summary(processed_count, skipped_count, total_recorded)
         
-        # 6. 保存調試 HTML
-        browser_handler.save_debug_html()
-        
     finally:
         context.close()
         browser.close()

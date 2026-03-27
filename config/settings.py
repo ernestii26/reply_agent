@@ -5,7 +5,11 @@ import os
 from dotenv import load_dotenv
 
 # 載入環境變數
-load_dotenv()
+# load_dotenv()
+EMAIL = os.environ.get("EMAIL")
+PASSWORD = os.environ.get("PASSWORD")
+GEMINI_API_KEYS= os.environ.get("GEMINI_API_KEYS")
+SERPER_API_KEY= os.environ.get("SERPER_API_KEY")
  
 
 def _load_prompt(filename: str, default: str) -> str:
@@ -22,7 +26,7 @@ def _load_prompt(filename: str, default: str) -> str:
         return default
 # ==================== 瀏覽器配置 ====================
 BROWSER_CONFIG = {
-    "headless": False,  # 是否使用無頭模式
+    "headless": os.environ.get("CI") == "true",  # CI 環境自動啟用無頭模式（GitHub Actions 會設定 CI=true）
     "slow_mo": 0,  # 減慢操作速度（毫秒），用於調試
     "dry_run": False,  # True = 模擬模式（不實際發文）；改為 False 才會真正送出回覆
     "min_replies_per_run": 8,  # 每次執行至少回覆幾篇（會自動捲動載入更多貼文）；設為 0 表示不限制
@@ -209,7 +213,6 @@ SEARCH_CONFIG = {
 
 # ==================== 檔案配置 ====================
 FILES = {
-    "debug_html": "logs/debug.html",            # 除錯用 HTML 文件
     "log_file": "logs/agent.log",               # 日誌文件
     "screenshots_dir": "logs/screenshots",      # 送出回覆後的截圖資料夾
     "db_path": "logs/storage.db",               # SQLite DB 檔案

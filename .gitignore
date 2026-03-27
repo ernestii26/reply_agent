@@ -1,5 +1,6 @@
-# 環境變數（包含敏感資訊）
+# 環境變數與憑證（包含敏感資訊）
 .env
+cloud.json
 
 # Python
 __pycache__/
@@ -25,9 +26,6 @@ logs/
 # 日誌文件
 *.log
 agent.log
-
-# 調試文件
-debug.html
 
 # Playwright
 .playwright/

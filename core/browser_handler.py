@@ -407,23 +407,6 @@ class BrowserHandler:
             timeout=5000
         )
     
-    def save_debug_html(self, filepath=None):
-        """
-        保存當前頁面的 HTML 供調試
-        
-        Args:
-            filepath: 保存路徑，預設使用設定中的路徑
-        """
-        if filepath is None:
-            filepath = FILES["debug_html"]
-        
-        try:
-            full_html = self.page.content()
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(full_html)
-        except Exception as e:
-            print(f"警告：保存 debug HTML 時出錯: {e}")
-    
     def scroll_load_more(self) -> bool:
         """
         點擊「載入更多」按鈕後向下滾動，等待新貼文出現。
