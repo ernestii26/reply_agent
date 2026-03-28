@@ -48,7 +48,7 @@ def run(playwright: Playwright) -> None:
             logger.info(f"最近記錄的ID: {', '.join(recent)}...")
         
         # 3. 準備巡邏設定
-        patrol_mode = AGENT_PATROL_CONFIG.get("mode", "board")
+        patrol_modes = AGENT_PATROL_CONFIG.get("modes", ["board"])
         target_keywords = AGENT_PATROL_CONFIG.get("target_keywords", ["二類"])
         processed_count, skipped_count, replied_count = 0, 0, 0
         min_replies = BROWSER_CONFIG["min_replies_per_run"]
@@ -142,46 +142,45 @@ def run(playwright: Playwright) -> None:
                     logger.error(f"處理貼文時出錯: {e}")
                     continue
 
-        # 4. 根據模式執行對應邏輯
-        if patrol_mode == "keyword":
-            logger.info("\n步驟 2: [關鍵字模式] 啟動")
-            for query in target_keywords:
-                if min_replies > 0 and replied_count >= min_replies:
-                    break
-                logger.info(f"\n🔍 開始搜尋關鍵字: {query}")
-                browser_handler.navigate_to_board() 
-                
-                if not browser_handler.search_feed(query):
-                    continue
-                    
-                posts = browser_handler.get_posts()
-                logger.section(f"「{query}」找到 {len(posts)} 個貼文，開始處理")
-                process_posts_list(posts)
+        # 4. 依序執行各模式，達到目標即停止
+        for step, mode in enumerate(patrol_modes, 1):
             if min_replies > 0 and replied_count >= min_replies:
-                logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇）")
-        else:
-            logger.info("\n步驟 2: [一般模式] 直接瀏覽討論板最新貼文")
-            browser_handler.navigate_to_board()
-            seen_post_ids = set()
-            while True:
-                posts = browser_handler.get_posts()
-                new_posts = [p for p in posts if browser_handler.get_post_id(p) not in seen_post_ids]
-                for p in new_posts:
-                    seen_post_ids.add(browser_handler.get_post_id(p))
+                break
 
-                if new_posts:
-                    logger.section(f"找到 {len(new_posts)} 個新貼文，開始處理")
-                    process_posts_list(new_posts)
+            if mode == "keyword":
+                logger.info(f"\n步驟 {step+1}: [關鍵字模式] 啟動")
+                for query in target_keywords:
+                    if min_replies > 0 and replied_count >= min_replies:
+                        break
+                    logger.info(f"\n🔍 開始搜尋關鍵字: {query}")
+                    browser_handler.navigate_to_board()
+                    if not browser_handler.search_feed(query):
+                        continue
+                    posts = browser_handler.get_posts()
+                    logger.section(f"「{query}」找到 {len(posts)} 個貼文，開始處理")
+                    process_posts_list(posts)
 
-                if min_replies <= 0 or replied_count >= min_replies:
-                    if min_replies > 0:
-                        logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇）")
-                    break
+            elif mode == "board":
+                logger.info(f"\n步驟 {step+1}: [板塊模式] 瀏覽最新貼文")
+                browser_handler.navigate_to_board()
+                seen_post_ids = set()
+                while True:
+                    posts = browser_handler.get_posts()
+                    new_posts = [p for p in posts if browser_handler.get_post_id(p) not in seen_post_ids]
+                    for p in new_posts:
+                        seen_post_ids.add(browser_handler.get_post_id(p))
+                    if new_posts:
+                        logger.section(f"找到 {len(new_posts)} 個新貼文，開始處理")
+                        process_posts_list(new_posts)
+                    if min_replies <= 0 or replied_count >= min_replies:
+                        break
+                    logger.info(f"  ℹ 目前已回覆 {replied_count} 篇，目標 {min_replies} 篇，嘗試載入更多貼文...")
+                    if not browser_handler.scroll_load_more():
+                        logger.info("  ℹ 已無更多貼文可載入")
+                        break
 
-                logger.info(f"  ℹ 目前已回覆 {replied_count} 篇，目標 {min_replies} 篇，嘗試載入更多貼文...")
-                if not browser_handler.scroll_load_more():
-                    logger.info("  ℹ 已無更多貼文可載入")
-                    break
+        if min_replies > 0 and replied_count >= min_replies:
+            logger.info(f"  ✓ 已達最少回覆目標（{min_replies} 篇）")
             
         # 5. 輸出統計結果
         total_recorded = len(storage.load())

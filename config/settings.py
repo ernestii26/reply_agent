@@ -161,7 +161,7 @@ AI_CONFIG = {
 
 # ==================== 代理巡邏配置 ====================
 AGENT_PATROL_CONFIG = {
-    "mode": "keyword",  # 模式選擇："keyword" (關鍵字搜尋) 或 "board" (直接瀏覽最新貼文)
+    "modes": ["keyword", "board"],  # 依序執行，達到 min_replies 即停止；可用模式："keyword"、"board"
     "target_keywords": ["資工", "電機", "物理","數學", "分科", "化學", "理工", "數學", "學測"],
 }
 
