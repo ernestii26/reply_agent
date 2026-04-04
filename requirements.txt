@@ -1,3 +1,4 @@
+# 主要依賴
 google-api-python-client==2.190.0
 google-auth==2.37.0
 google-auth-oauthlib==1.3.0
@@ -5,3 +6,21 @@ google-generativeai==0.8.6
 playwright==1.58.0
 python-dotenv==1.2.1
 requests==2.32.5
+
+# 傳遞依賴（必須固定以確保環境穩定性）
+certifi==2025.1.31
+cachetools==6.2.4
+charset-normalizer==3.4.1
+cryptography==44.0.1
+google-pasta==0.2.0
+googleapis-common-protos==1.69.0
+grpcio==1.76.0
+idna==3.10
+pyasn1==0.6.1
+pyasn1-modules==0.4.1
+pydantic==2.10.5
+pydantic-core==2.27.2
+protobuf==6.33.2
+rsa==4.9
+typing-extensions==4.12.2
+urllib3==2.3.0
