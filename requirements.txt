@@ -9,7 +9,7 @@ requests==2.32.5
 
 # 傳遞依賴（必須固定以確保環境穩定性）
 certifi==2025.1.31
-cachetools==6.2.4
+cachetools==5.5.2
 charset-normalizer==3.4.1
 cryptography==44.0.1
 google-pasta==0.2.0
