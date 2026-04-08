@@ -29,7 +29,7 @@ BROWSER_CONFIG = {
     "headless": os.environ.get("CI") == "true",  # CI 環境自動啟用無頭模式（GitHub Actions 會設定 CI=true）
     "slow_mo": 0,  # 減慢操作速度（毫秒），用於調試
     "dry_run": False,  # True = 模擬模式（不實際發文）；改為 False 才會真正送出回覆
-    "min_replies_per_run": 8,  # 每次執行至少回覆幾篇（會自動捲動載入更多貼文）；設為 0 表示不限制
+    "min_replies_per_run": 2,  # 每次執行至少回覆幾篇（會自動捲動載入更多貼文）；設為 0 表示不限制
 }
 
 # ==================== 用戶配置 ====================
@@ -37,8 +37,8 @@ USER_NAME = "冠冠｜台大資工學長"  # 你的顯示名稱
 
 # ==================== API 配置 ====================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# GEMINI_MODEL = "gemma-3-4b-it"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemma-3-4b-it"
+# GEMINI_MODEL = "gemini-2.5-flash"
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 # 支持多個 GEMINI API KEY（用逗號分隔），若未設定則回退到單一 GEMINI_API_KEY
 GEMINI_API_KEYS_RAW = os.getenv("GEMINI_API_KEYS")

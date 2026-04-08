@@ -21,6 +21,65 @@ class BrowserHandler:
             page: Playwright Page 對象
         """
         self.page = page
+
+    def _dismiss_blocking_overlay(self) -> bool:
+        """嘗試關閉會攔截點擊的遮罩/彈窗；成功回傳 True。"""
+        # 常見全螢幕遮罩（例如 z-[9999]）
+        overlay_selectors = [
+            "div[class*='fixed'][class*='inset-0'][class*='z-[9999]']",
+            "div.fixed.inset-0",
+        ]
+
+        for selector in overlay_selectors:
+            try:
+                overlay = self.page.locator(selector).first
+                if overlay.count() == 0 or not overlay.is_visible():
+                    continue
+
+                # 先找「關閉型」按鈕
+                close_btn = overlay.locator(
+                    "button:has(svg.lucide-x), "
+                    "button:has-text('關閉'), "
+                    "button:has-text('取消'), "
+                    "button:has-text('我知道了'), "
+                    "button:has-text('我了解了'), "
+                    "button:has-text('稍後'), "
+                    "button:has-text('略過'), "
+                    "button:has-text('跳過')"
+                ).first
+
+                if close_btn.count() > 0 and close_btn.is_visible():
+                    close_btn.click(timeout=10000)
+                else:
+                    # 某些彈窗可用 ESC 關閉
+                    self.page.keyboard.press("Escape")
+
+                time.sleep(5.3)
+                if not overlay.is_visible():
+                    print("已關閉阻擋點擊的彈窗/遮罩")
+                    return True
+            except Exception:
+                continue
+
+        return False
+
+    def _click_with_dismiss(self, locator, target_name: str = "元素", timeout: int = 30000):
+        """點擊前若有遮罩攔截，先 dismiss 再重試。"""
+        try:
+            locator.click(timeout=timeout)
+            return
+        except Exception as e:
+            err = str(e)
+            needs_dismiss = (
+                "intercepts pointer events" in err
+                or "subtree intercepts pointer events" in err
+            )
+
+            if needs_dismiss and self._dismiss_blocking_overlay():
+                locator.click(timeout=timeout)
+                return
+
+            raise Exception(f"點擊 {target_name} 失敗: {e}") from e
     
     def _dismiss_announcement(self):
         """關閉可能出現的系統公告彈跳視窗（不存在時靜默略過）"""
@@ -31,7 +90,7 @@ class BrowserHandler:
                 "button.absolute.top-3.right-3:has(svg.lucide-x)"
             ).first
             if close_btn.count() > 0 and close_btn.is_visible():
-                close_btn.click()
+                self._click_with_dismiss(close_btn, "公告彈窗關閉按鈕")
                 time.sleep(1.5)
                 print("已關閉公告彈跳視窗")
         except Exception:
@@ -48,15 +107,24 @@ class BrowserHandler:
         # self.page.get_by_role("button").filter(has_text=re.compile(r"^$")).click()
 
         # 填寫 Email
-        self.page.get_by_role("textbox", name="user@example.com").click()
+        self._click_with_dismiss(
+            self.page.get_by_role("textbox", name="user@example.com"),
+            "Email 輸入框"
+        )
         self.page.get_by_role("textbox", name="user@example.com").fill(EMAIL)
         
         # 填寫密碼
-        self.page.get_by_role("textbox", name="********").click()
+        self._click_with_dismiss(
+            self.page.get_by_role("textbox", name="********"),
+            "密碼輸入框"
+        )
         self.page.get_by_role("textbox", name="********").fill(PASSWORD)
         
         # 點擊登入
-        self.page.get_by_role("button", name="登入").click()
+        self._click_with_dismiss(
+            self.page.get_by_role("button", name="登入"),
+            "登入按鈕"
+        )
         time.sleep(WAIT_TIMES["after_click"] / 1000)
     def navigate_to_board(self):
         """導航到目標討論板"""
@@ -160,7 +228,10 @@ class BrowserHandler:
         Args:
             post: 貼文元素
         """
-        post.locator(SELECTORS["post_link"]).first.click()
+        self._click_with_dismiss(
+            post.locator(SELECTORS["post_link"]).first,
+            "貼文連結"
+        )
         time.sleep(WAIT_TIMES["post_detail_load"] / 1000)
     
     def get_post_content(self) -> str:
@@ -226,7 +297,7 @@ class BrowserHandler:
         try:
             # 找到回覆輸入框
             reply_textarea = self.page.locator(SELECTORS["reply_textarea"]).first
-            reply_textarea.click()
+            self._click_with_dismiss(reply_textarea, "回覆輸入框")
             time.sleep(WAIT_TIMES["textarea_fill"] / 1000)
             
             # 輸入回覆內容
@@ -249,7 +320,7 @@ class BrowserHandler:
             if BROWSER_CONFIG["dry_run"]:
                 print(f"  🔸 DRY_RUN 模式：略過實際送出（在 settings.py 將 dry_run 改為 False 以啟用）")
             else:
-                submit_button.click()
+                self._click_with_dismiss(submit_button, "送出按鈕")
             print(f"  ✅ 已成功送出回覆!")
             time.sleep(WAIT_TIMES["after_submit"] / 1000)
             
@@ -316,17 +387,26 @@ class BrowserHandler:
         return False
     
     def search_feed(self, query: str) -> bool:
-        try:
+        def _do_search():
             search_box = self.page.get_by_role("textbox", name="搜尋文章或作者暱稱")
-            search_box.click()
+            self._click_with_dismiss(search_box, "搜尋框")
             time.sleep(SEARCH_CONFIG["search_input_delay"] / 1000)
             search_box.fill(query)
-            search_box.press("Enter")  # 補上這行送出搜尋
+            search_box.press("Enter")
             time.sleep(SEARCH_CONFIG["search_load_wait"] / 1000)
+
+        try:
+            _do_search()
             return True
         except Exception as e:
-            print(f"  ⚠ 論壇搜尋時出錯: {e}")
-            return False
+            print(f"  ⚠ 論壇搜尋時出錯，嘗試關閉公告後重試: {e}")
+            self._dismiss_announcement()
+            try:
+                _do_search()
+                return True
+            except Exception as e2:
+                print(f"  ✗ 重試搜尋仍失敗: {e2}")
+                return False
     
     def get_search_results(self, max_results: int = None) -> list:
         """
@@ -369,7 +449,7 @@ class BrowserHandler:
         """清除搜尋框內容，返回正常瀏覽狀態"""
         try:
             search_box = self.page.get_by_role("textbox", name="搜尋文章或作者暱稱")
-            search_box.click()
+            self._click_with_dismiss(search_box, "搜尋框")
             search_box.fill("")  # 清空搜尋框
             time.sleep(SEARCH_CONFIG["search_input_delay"] / 1000)
         except Exception as e:
@@ -423,7 +503,7 @@ class BrowserHandler:
             load_more_btn = self.page.locator("button:has-text('載入更多')").first
             if load_more_btn.count() > 0 and load_more_btn.is_visible():
                 print("  🔄 點擊「載入更多」按鈕...")
-                load_more_btn.click()
+                self._click_with_dismiss(load_more_btn, "載入更多按鈕")
             else:
                 # 按鈕不存在時fallback到滾動
                 self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
