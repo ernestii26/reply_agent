@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # 載入環境變數
-# load_dotenv()
+load_dotenv()
 EMAIL = os.environ.get("EMAIL")
 PASSWORD = os.environ.get("PASSWORD")
 GEMINI_API_KEYS= os.environ.get("GEMINI_API_KEYS")
