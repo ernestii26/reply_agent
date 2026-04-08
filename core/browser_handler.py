@@ -26,13 +26,13 @@ class BrowserHandler:
         """關閉可能出現的系統公告彈跳視窗（不存在時靜默略過）"""
         try:
             # 稍等讓彈跳視窗有機會出現（避免競態條件）
-            time.sleep(1)
+            time.sleep(3)
             close_btn = self.page.locator(
                 "button.absolute.top-3.right-3:has(svg.lucide-x)"
             ).first
             if close_btn.count() > 0 and close_btn.is_visible():
                 close_btn.click()
-                time.sleep(0.5)
+                time.sleep(1.5)
                 print("已關閉公告彈跳視窗")
         except Exception:
             pass
