@@ -1,8 +1,8 @@
 name: 自動回覆 Agent
 
 on:
-  schedule:
-    - cron: '23 21 * * *'  # 每天台灣時間 06:23 (UTC 22:23) 執行
+  # schedule:
+  #   - cron: '23 21 * * *'  # 每天台灣時間 06:23 (UTC 22:23) 執行
   workflow_dispatch:
 
 jobs:
