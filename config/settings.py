@@ -152,8 +152,8 @@ reply_default = """
     """
 
 AI_CONFIG = {
-    "reply_min_length": 30,  # 回覆最小字數
-    "reply_max_length": 200,  # 回覆最大字數
+    "reply_min_length": 200,  # 回覆最小字數
+    "reply_max_length": 500,  # 回覆最大字數
     "decision_prompt_template": _load_prompt("decision_prompt.txt", decision_default),
     "reply_prompt_template": _load_prompt("reply_prompt.txt", reply_default),
     "question_keywords": ["？", "?", "請問", "想問", "有人知道", "嗎", "呢"],
@@ -161,7 +161,7 @@ AI_CONFIG = {
 
 # ==================== 代理巡邏配置 ====================
 AGENT_PATROL_CONFIG = {
-    "modes": ["keyword", "board"],  # 依序執行，達到 min_replies 即停止；可用模式："keyword"、"board"
+    "modes": ["keyword","board"],  # 依序執行，達到 min_replies 即停止；可用模式："keyword"、"board"
     "target_keywords": ["資工", "電機", "物理","數學", "分科", "化學", "理工", "數學", "學測"],
 }
 
