@@ -125,6 +125,11 @@ class BrowserHandler:
             self.page.get_by_role("button", name="登入"),
             "登入按鈕"
         )
+        time.sleep(1)
+
+        # 選擇身份：學長姐（大學生）
+        self.page.get_by_role("radio", name="學長姐 （大學生）").click()
+        self.page.get_by_role("button", name="儲存身份").click()
         time.sleep(WAIT_TIMES["after_click"] / 1000)
     def navigate_to_board(self):
         """導航到目標討論板"""
