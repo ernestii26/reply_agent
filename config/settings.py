@@ -152,7 +152,7 @@ reply_default = """
     """
 
 AI_CONFIG = {
-    "reply_min_length": 200,  # 回覆最小字數
+    "reply_min_length": 100,  # 回覆最小字數
     "reply_max_length": 300,  # 回覆最大字數
     "decision_prompt_template": _load_prompt("decision_prompt.txt", decision_default),
     "reply_prompt_template": _load_prompt("reply_prompt.txt", reply_default),
