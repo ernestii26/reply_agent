@@ -153,7 +153,7 @@ reply_default = """
 
 AI_CONFIG = {
     "reply_min_length": 200,  # 回覆最小字數
-    "reply_max_length": 500,  # 回覆最大字數
+    "reply_max_length": 300,  # 回覆最大字數
     "decision_prompt_template": _load_prompt("decision_prompt.txt", decision_default),
     "reply_prompt_template": _load_prompt("reply_prompt.txt", reply_default),
     "question_keywords": ["？", "?", "請問", "想問", "有人知道", "嗎", "呢"],
