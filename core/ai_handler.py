@@ -121,6 +121,8 @@ class AIHandler:
                     )
 
                 response = self.model.generate_content(prompt)
+                if not response.text:
+                    raise ValueError("Gemini 回傳空內容")
                 reply = response.text.strip()
 
                 # 額外保險：移除可能殘留的 Markdown 語法
