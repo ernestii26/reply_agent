@@ -74,6 +74,8 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           EMAIL2: ${{ secrets.EMAIL2 }}
           PASSWORD2: ${{ secrets.PASSWORD2 }}
+          USER_NAME: ${{ secrets.USER_NAME }}
+          USER_NAME2: ${{ secrets.USER_NAME2 }}
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
 

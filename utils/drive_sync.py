@@ -131,9 +131,10 @@ def download():
 def upload():
     service = _get_service()
     db_folder_id = os.environ["GDRIVE_DB_FOLDER_ID"]
+    default_screenshots_folder = os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"]
     screenshots_folder_ids = [
-        os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"],
-        os.environ.get("GDRIVE_SCREENSHOTS_FOLDER_ID2", os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"]),
+        default_screenshots_folder,
+        os.environ.get("GDRIVE_SCREENSHOTS_FOLDER_ID2") or default_screenshots_folder,
     ]
 
     for db_path in DB_PATHS:
