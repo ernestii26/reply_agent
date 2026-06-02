@@ -74,8 +74,8 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
           EMAIL2: ${{ secrets.EMAIL2 }}
           PASSWORD2: ${{ secrets.PASSWORD2 }}
-          USER_NAME: ${{ secrets.USER_NAME }}
-          USER_NAME2: ${{ secrets.USER_NAME2 }}
+          USER_NAME: 冠冠｜台大資工學長
+          USER_NAME2: 柚子｜逢甲RMIT商學系學長
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
 

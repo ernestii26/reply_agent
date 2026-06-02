@@ -5,8 +5,8 @@ import re
 import time
 from playwright.sync_api import Page, expect
 from config.settings import (
-    BASE_URL, TARGET_BOARD_NAME, USER_NAME,
-    EMAIL, PASSWORD, SELECTORS, WAIT_TIMES, FILES, SEARCH_CONFIG, BROWSER_CONFIG
+    BASE_URL, TARGET_BOARD_NAME,
+    SELECTORS, WAIT_TIMES, FILES, SEARCH_CONFIG, BROWSER_CONFIG
 )
 
 
@@ -23,7 +23,9 @@ class BrowserHandler:
             screenshots_dir: 截圖存放路徑，預設使用 FILES["screenshots_dir"]
         """
         self.page = page
-        self.user_name = user_name or USER_NAME
+        if not user_name:
+            raise ValueError("user_name 未設定，請確認 USER_NAME 環境變數")
+        self.user_name = user_name
         self.screenshots_dir = screenshots_dir or FILES["screenshots_dir"]
 
     def _dismiss_blocking_overlay(self) -> bool:
@@ -102,8 +104,10 @@ class BrowserHandler:
 
     def login(self, email: str = None, password: str = None):
         """執行登入流程"""
-        email = email or EMAIL
-        password = password or PASSWORD
+        if not email:
+            raise ValueError("email 未設定，請確認 EMAIL 環境變數")
+        if not password:
+            raise ValueError("password 未設定，請確認 PASSWORD 環境變數")
 
         # 前往首頁
         self.page.goto(BASE_URL)
