@@ -37,6 +37,8 @@ class AgentLogger:
         
         # 文件 handler - 詳細記錄
         if log_file:
+            import os
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
             file_handler = logging.FileHandler(log_file, encoding='utf-8')
             file_handler.setLevel(file_level)
             file_formatter = logging.Formatter(
