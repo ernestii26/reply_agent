@@ -6,7 +6,7 @@ from playwright.sync_api import Playwright, sync_playwright
 import time
 
 # 導入自定義模組
-from config.settings import BROWSER_CONFIG, WAIT_TIMES, AI_CONFIG, AGENT_PATROL_CONFIG
+from config.settings import BROWSER_CONFIG, WAIT_TIMES, AGENT_PATROL_CONFIG, USERS
 from utils.logger import get_logger
 from utils.sqlite_storage import SQLitePostStorage
 from core.ai_handler import get_ai_handler
@@ -14,13 +14,16 @@ from core.browser_handler import BrowserHandler
 from core.search_handler import create_search_handler
 
 
-def run(playwright: Playwright) -> None:
+def run(playwright: Playwright, user_config: dict = None) -> None:
     """主執行流程"""
+    if user_config is None:
+        user_config = USERS[0]
+
     # 初始化模組
-    logger = get_logger()
-    storage = SQLitePostStorage()
-    ai = get_ai_handler()
-    
+    logger = get_logger(log_file=user_config.get("log_file"))
+    storage = SQLitePostStorage(db_path=user_config["db_path"])
+    ai = get_ai_handler(reply_prompt_template=user_config["reply_prompt"])
+
     # 啟動瀏覽器
     browser = playwright.chromium.launch(
         headless=BROWSER_CONFIG["headless"],
@@ -28,16 +31,20 @@ def run(playwright: Playwright) -> None:
     )
     context = browser.new_context()
     page = context.new_page()
-    browser_handler = BrowserHandler(page)
-    
+    browser_handler = BrowserHandler(
+        page,
+        user_name=user_config["user_name"],
+        screenshots_dir=user_config["screenshots_dir"],
+    )
+
     # 初始化搜尋處理器（外部 RAG，透過 Serper API 取得外部知識）
     search_handler = create_search_handler()
-    
+
     try:
         # 1. 登入
-        logger.info("\n🚀 開始執行自動回覆 Agent\n")
+        logger.info(f"\n🚀 開始執行自動回覆 Agent（{user_config['user_name']}）\n")
         logger.info("步驟 1: 登入系統")
-        browser_handler.login()
+        browser_handler.login(email=user_config["email"], password=user_config["password"])
         logger.success("登入成功")
         
         # 2. 讀取已處理記錄
@@ -192,5 +199,10 @@ def run(playwright: Playwright) -> None:
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--user", type=int, default=1, choices=[1, 2], help="執行哪個用戶（1 或 2）")
+    args = parser.parse_args()
+    user_config = USERS[args.user - 1]
     with sync_playwright() as playwright:
-        run(playwright)
+        run(playwright, user_config)

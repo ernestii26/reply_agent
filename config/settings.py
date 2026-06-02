@@ -33,7 +33,8 @@ BROWSER_CONFIG = {
 }
 
 # ==================== 用戶配置 ====================
-USER_NAME = "冠冠｜台大資工學長"  # 你的顯示名稱
+USER_NAME = "冠冠｜台大資工學長"  # User 1 顯示名稱
+USER_NAME2 = "柚子｜逢甲RMIT商學系學長"  # User 2 顯示名稱
 
 # ==================== API 配置 ====================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -155,7 +156,7 @@ AI_CONFIG = {
     "reply_min_length": 100,  # 回覆最小字數
     "reply_max_length": 300,  # 回覆最大字數
     "decision_prompt_template": _load_prompt("decision_prompt.txt", decision_default),
-    "reply_prompt_template": _load_prompt("reply_prompt.txt", reply_default),
+    "reply_prompt_template": _load_prompt("reply_prompt1.txt", reply_default),  # user1 預設
     "question_keywords": ["？", "?", "請問", "想問", "有人知道", "嗎", "呢"],
 }
 
@@ -222,4 +223,29 @@ FILES = {
 STORAGE = {
     "backend": "sqlite"
 }
+
+# ==================== 多用戶配置 ====================
+EMAIL2 = os.getenv("EMAIL2")
+PASSWORD2 = os.getenv("PASSWORD2")
+
+USERS = [
+    {
+        "email": EMAIL,
+        "password": PASSWORD,
+        "user_name": USER_NAME,
+        "reply_prompt": _load_prompt("reply_prompt1.txt", reply_default),
+        "db_path": "logs/storage_user1.db",
+        "screenshots_dir": "logs/screenshots/user1",
+        "log_file": "logs/agent_user1.log",
+    },
+    {
+        "email": EMAIL2,
+        "password": PASSWORD2,
+        "user_name": USER_NAME2,
+        "reply_prompt": _load_prompt("reply_prompt2.txt", reply_default),
+        "db_path": "logs/storage_user2.db",
+        "screenshots_dir": "logs/screenshots/user2",
+        "log_file": "logs/agent_user2.log",
+    },
+]
 

@@ -24,8 +24,14 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 # ==================== 本地路徑 ====================
-DB_PATH = Path("logs/storage.db")
-SCREENSHOTS_DIR = Path("logs/screenshots")
+DB_PATHS = [
+    Path("logs/storage_user1.db"),
+    Path("logs/storage_user2.db"),
+]
+SCREENSHOTS_DIRS = [
+    Path("logs/screenshots/user1"),
+    Path("logs/screenshots/user2"),
+]
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -107,42 +113,46 @@ def download():
     service = _get_service()
     db_folder_id = os.environ["GDRIVE_DB_FOLDER_ID"]
 
-    file_id = _find_file(service, "storage.db", db_folder_id)
-    if not file_id:
-        print("[drive_sync] Drive 上尚無 storage.db，略過下載（首次執行）")
-        return
-
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    request = service.files().get_media(fileId=file_id)
-    with open(DB_PATH, "wb") as f:
-        downloader = MediaIoBaseDownload(f, request)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk()
-    print(f"[drive_sync] 下載完成：storage.db ({DB_PATH.stat().st_size} bytes)")
+    for db_path in DB_PATHS:
+        file_id = _find_file(service, db_path.name, db_folder_id)
+        if not file_id:
+            print(f"[drive_sync] Drive 上尚無 {db_path.name}，略過下載（首次執行）")
+            continue
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        request = service.files().get_media(fileId=file_id)
+        with open(db_path, "wb") as f:
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+        print(f"[drive_sync] 下載完成：{db_path.name} ({db_path.stat().st_size} bytes)")
 
 
 def upload():
     service = _get_service()
     db_folder_id = os.environ["GDRIVE_DB_FOLDER_ID"]
-    screenshots_folder_id = os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"]
+    screenshots_folder_ids = [
+        os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"],
+        os.environ.get("GDRIVE_SCREENSHOTS_FOLDER_ID2", os.environ["GDRIVE_SCREENSHOTS_FOLDER_ID"]),
+    ]
 
-    if DB_PATH.exists():
-        _upload_file(service, DB_PATH, db_folder_id)
-    else:
-        print("[drive_sync] storage.db 不存在，略過")
-
-    if SCREENSHOTS_DIR.exists():
-        screenshots = sorted(SCREENSHOTS_DIR.glob("*.png"))
-        if screenshots:
-            date_label = _tw_date_label()
-            date_folder_id = _get_or_create_subfolder(service, date_label, screenshots_folder_id)
-            for f in screenshots:
-                _upload_file(service, f, date_folder_id, mime_type="image/png")
+    for db_path in DB_PATHS:
+        if db_path.exists():
+            _upload_file(service, db_path, db_folder_id)
         else:
-            print("[drive_sync] 無截圖可上傳")
-    else:
-        print("[drive_sync] screenshots/ 資料夾不存在，略過")
+            print(f"[drive_sync] {db_path.name} 不存在，略過")
+
+    date_label = _tw_date_label()
+    for i, screenshots_dir in enumerate(SCREENSHOTS_DIRS):
+        if not screenshots_dir.exists():
+            continue
+        screenshots = sorted(screenshots_dir.glob("*.png"))
+        if not screenshots:
+            continue
+        folder_id = screenshots_folder_ids[i]
+        date_folder_id = _get_or_create_subfolder(service, date_label, folder_id)
+        for f in screenshots:
+            _upload_file(service, f, date_folder_id, mime_type="image/png")
 
     print("[drive_sync] 上傳完成")
 

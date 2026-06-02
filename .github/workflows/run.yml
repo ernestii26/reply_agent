@@ -47,12 +47,15 @@ jobs:
           GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
           GDRIVE_DB_FOLDER_ID: ${{ secrets.GDRIVE_DB_FOLDER_ID }}
           GDRIVE_SCREENSHOTS_FOLDER_ID: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID }}
+          GDRIVE_SCREENSHOTS_FOLDER_ID2: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID2 }}
 
-      - name: 執行 Agent
-        run: python main.py
+      - name: 執行 Agent（兩個用戶並行）
+        run: python run_all.py
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
+          EMAIL2: ${{ secrets.EMAIL2 }}
+          PASSWORD2: ${{ secrets.PASSWORD2 }}
           GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
 
@@ -65,3 +68,4 @@ jobs:
           GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
           GDRIVE_DB_FOLDER_ID: ${{ secrets.GDRIVE_DB_FOLDER_ID }}
           GDRIVE_SCREENSHOTS_FOLDER_ID: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID }}
+          GDRIVE_SCREENSHOTS_FOLDER_ID2: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID2 }}

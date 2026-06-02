@@ -12,15 +12,19 @@ from config.settings import (
 
 class BrowserHandler:
     """瀏覽器處理類，負責所有網頁操作"""
-    
-    def __init__(self, page: Page):
+
+    def __init__(self, page: Page, user_name: str = None, screenshots_dir: str = None):
         """
         初始化瀏覽器處理器
-        
+
         Args:
             page: Playwright Page 對象
+            user_name: 論壇顯示名稱，預設使用 settings.USER_NAME
+            screenshots_dir: 截圖存放路徑，預設使用 FILES["screenshots_dir"]
         """
         self.page = page
+        self.user_name = user_name or USER_NAME
+        self.screenshots_dir = screenshots_dir or FILES["screenshots_dir"]
 
     def _dismiss_blocking_overlay(self) -> bool:
         """嘗試關閉會攔截點擊的遮罩/彈窗；成功回傳 True。"""
@@ -96,29 +100,29 @@ class BrowserHandler:
         except Exception:
             pass
 
-    def login(self):
+    def login(self, email: str = None, password: str = None):
         """執行登入流程"""
+        email = email or EMAIL
+        password = password or PASSWORD
+
         # 前往首頁
         self.page.goto(BASE_URL)
         time.sleep(2)
         self._dismiss_announcement()
-        # time.sleep(10)
-        # 點擊初始登入按鈕（空白按鈕）
-        # self.page.get_by_role("button").filter(has_text=re.compile(r"^$")).click()
 
         # 填寫 Email
         self._click_with_dismiss(
             self.page.get_by_role("textbox", name="user@example.com"),
             "Email 輸入框"
         )
-        self.page.get_by_role("textbox", name="user@example.com").fill(EMAIL)
-        
+        self.page.get_by_role("textbox", name="user@example.com").fill(email)
+
         # 填寫密碼
         self._click_with_dismiss(
             self.page.get_by_role("textbox", name="********"),
             "密碼輸入框"
         )
-        self.page.get_by_role("textbox", name="********").fill(PASSWORD)
+        self.page.get_by_role("textbox", name="********").fill(password)
         
         # 點擊登入
         self._click_with_dismiss(
@@ -259,7 +263,7 @@ class BrowserHandler:
             是否已回覆
         """
         if user_name is None:
-            user_name = USER_NAME
+            user_name = self.user_name
         print(f"  🔍 check_if_already_replied: 檢查是否已以 [{user_name}] 回覆")
 
         # Step 1: 嘗試展開全部留言
@@ -473,7 +477,7 @@ class BrowserHandler:
         import os
         from datetime import datetime
         try:
-            screenshots_dir = FILES["screenshots_dir"]
+            screenshots_dir = self.screenshots_dir
             os.makedirs(screenshots_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = os.path.join(screenshots_dir, f"{timestamp}_{post_id}.png")

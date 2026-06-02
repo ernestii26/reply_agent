@@ -9,13 +9,14 @@ from config.settings import GEMINI_API_KEY, GEMINI_MODEL, AI_CONFIG, GEMINI_API_
 
 class AIHandler:
     """AI 處理類，負責判斷是否回覆以及生成回覆內容"""
-    
-    def __init__(self):
+
+    def __init__(self, reply_prompt_template: str = None):
         """初始化 AI 處理器"""
         self.model = None
         self.enabled = False
         self.api_keys = GEMINI_API_KEYS_LIST or []
         self.current_key_index = 0
+        self.reply_prompt_template = reply_prompt_template or AI_CONFIG["reply_prompt_template"]
         
         # 嘗試使用可用的 API key 初始化，支援多 key
         if self.api_keys:
@@ -104,16 +105,15 @@ class AIHandler:
 
                 # 根據是否有增強上下文調整提示詞
                 if enriched_context and enriched_context != content:
-                    prompt = AI_CONFIG["reply_prompt_template"].format(
+                    prompt = self.reply_prompt_template.format(
                         title=title,
                         content=context_to_use,
                         min_length=AI_CONFIG["reply_min_length"],
                         max_length=AI_CONFIG["reply_max_length"]
                     )
-                    # 加入引用來源的指示
                     prompt += "\n\n注意：如果你參考了「論壇相關討論」或「最新相關資訊」中的具體數據（如分數、日期），請在回覆中自然地提及（例如：「根據最新資訊...」、「參考過往討論...」）。"
                 else:
-                    prompt = AI_CONFIG["reply_prompt_template"].format(
+                    prompt = self.reply_prompt_template.format(
                         title=title,
                         content=context_to_use,
                         min_length=AI_CONFIG["reply_min_length"],
@@ -213,22 +213,6 @@ class AIHandler:
         return "同學你好！看到你的問題了，建議可以多參考學長姐的經驗，或者到相關科系的版上詢問看看。加油！"
 
 
-# 全局 AI 處理器實例
-_ai_handler_instance = None
-
-def get_ai_handler(reinit=False):
-    """
-    獲取全局 AI 處理器實例
-    
-    Args:
-        reinit: 是否強制重新初始化
-    
-    Returns:
-        AIHandler 實例
-    """
-    global _ai_handler_instance
-    
-    if _ai_handler_instance is None or reinit:
-        _ai_handler_instance = AIHandler()
-    
-    return _ai_handler_instance
+def get_ai_handler(reply_prompt_template: str = None):
+    """建立並回傳一個新的 AIHandler 實例。"""
+    return AIHandler(reply_prompt_template=reply_prompt_template)

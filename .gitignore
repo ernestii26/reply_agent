@@ -16,6 +16,10 @@ build/
 venv/
 env/
 ENV/
+.venv/
+
+# Claude Code
+.claude/
 logs/
 # IDE
 .vscode/
