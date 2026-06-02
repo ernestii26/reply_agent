@@ -33,8 +33,8 @@ BROWSER_CONFIG = {
 }
 
 # ==================== 用戶配置 ====================
-USER_NAME = "冠冠｜台大資工學長"  # User 1 顯示名稱
-USER_NAME2 = "柚子｜逢甲RMIT商學系學長"  # User 2 顯示名稱
+USER_NAME = os.getenv("USER_NAME")
+USER_NAME2 = os.getenv("USER_NAME2")
 
 # ==================== API 配置 ====================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

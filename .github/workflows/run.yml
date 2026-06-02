@@ -2,8 +2,18 @@ name: 自動回覆 Agent
 
 on:
   schedule:
-    - cron: '23 21 * * *'  # 每天台灣時間 06:23 (UTC 22:23) 執行
+    - cron: '23 21 * * *'  # 每天台灣時間 06:23 (UTC 22:23) 執行，預設跑兩個用戶
   workflow_dispatch:
+    inputs:
+      user:
+        description: '執行哪個用戶（all / 1 / 2）'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - '1'
+          - '2'
 
 jobs:
   run:
@@ -49,8 +59,16 @@ jobs:
           GDRIVE_SCREENSHOTS_FOLDER_ID: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID }}
           GDRIVE_SCREENSHOTS_FOLDER_ID2: ${{ secrets.GDRIVE_SCREENSHOTS_FOLDER_ID2 }}
 
-      - name: 執行 Agent（兩個用戶並行）
-        run: python run_all.py
+      - name: 執行 Agent
+        run: |
+          USER_INPUT="${{ github.event.inputs.user }}"
+          if [ "$USER_INPUT" = "1" ]; then
+            python main.py --user 1
+          elif [ "$USER_INPUT" = "2" ]; then
+            python main.py --user 2
+          else
+            python run_all.py
+          fi
         env:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
