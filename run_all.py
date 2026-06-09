@@ -2,6 +2,8 @@
 多用戶平行執行入口
 使用 multiprocessing 同時啟動兩個 user 的巡邏流程，各自獨立 browser context 與 storage。
 """
+import signal
+import sys
 import multiprocessing
 from playwright.sync_api import sync_playwright
 from config.settings import USERS
@@ -20,6 +22,16 @@ if __name__ == "__main__":
         p = multiprocessing.Process(target=_run_user, args=(i,), name=f"user{i+1}")
         processes.append(p)
         p.start()
+
+    def _handle_sigterm(signum, frame):
+        for p in processes:
+            if p.is_alive():
+                p.terminate()
+        for p in processes:
+            p.join(timeout=30)
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _handle_sigterm)
 
     for p in processes:
         p.join()
