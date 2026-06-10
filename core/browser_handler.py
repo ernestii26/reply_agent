@@ -481,6 +481,24 @@ class BrowserHandler:
         import os
         from datetime import datetime
         try:
+            # 嘗試將自己最新留言捲動到視窗中央再截圖
+            try:
+                self.page.evaluate(
+                    """(userName) => {
+                        const authors = Array.from(
+                            document.querySelectorAll('div.bg-gray-50\\/50 span.font-medium.text-gray-700')
+                        );
+                        const mine = authors.filter(el => el.textContent.trim() === userName);
+                        if (mine.length > 0) {
+                            const last = mine[mine.length - 1];
+                            last.scrollIntoView({ block: 'center', behavior: 'instant' });
+                        }
+                    }""",
+                    self.user_name,
+                )
+            except Exception:
+                pass
+
             screenshots_dir = self.screenshots_dir
             os.makedirs(screenshots_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

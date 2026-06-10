@@ -35,3 +35,9 @@ if __name__ == "__main__":
 
     for p in processes:
         p.join()
+
+    failed = [p for p in processes if p.exitcode != 0]
+    if failed:
+        names = ", ".join(p.name for p in failed)
+        print(f"[run_all] 以下 process 異常結束：{names}")
+        sys.exit(1)

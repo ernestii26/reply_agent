@@ -170,7 +170,10 @@ class AIHandler:
         
         # 移除行內程式碼 `code`
         text = re.sub(r'`(.+?)`', r'\1', text)
-        
+
+        # 消除連續空白行（兩個以上換行縮成一個）
+        text = re.sub(r'\n{3,}', '\n\n', text)
+
         return text.strip()
 
     def _configure_with_key(self, key: str) -> bool:
