@@ -496,6 +496,7 @@ class BrowserHandler:
                     }""",
                     self.user_name,
                 )
+                time.sleep(0.5)  # 等瀏覽器 render 完捲動位置
             except Exception:
                 pass
 
