@@ -127,6 +127,7 @@ def run(playwright: Playwright, user_config: dict = None) -> None:
                             storage.save(post_id)
                             processed_count += 1
                             replied_count += 1
+                            browser_handler.scroll_to_own_reply()
                             logger.action(f"等待 {WAIT_TIMES['after_submit_screenshot'] // 1000} 秒後截圖...")
                             time.sleep(WAIT_TIMES["after_submit_screenshot"] / 1000)
                             browser_handler.take_screenshot(post_id)

@@ -1,11 +1,10 @@
 """
 瀏覽器處理器 - 封裝所有瀏覽器自動化操作
 """
-import re
 import time
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 from config.settings import (
-    BASE_URL, TARGET_BOARD_NAME,
+    BASE_URL,
     SELECTORS, WAIT_TIMES, FILES, SEARCH_CONFIG, BROWSER_CONFIG
 )
 
@@ -233,6 +232,7 @@ class BrowserHandler:
         """
         self.page.goto(url)
         time.sleep(WAIT_TIMES["post_detail_load"] / 1000)
+        self._dismiss_blocking_overlay()
 
     def click_post(self, post):
         """
@@ -308,6 +308,9 @@ class BrowserHandler:
             是否成功提交
         """
         try:
+            # 送出前先確保沒有遮罩擋住
+            self._dismiss_blocking_overlay()
+
             # 找到回覆輸入框
             reply_textarea = self.page.locator(SELECTORS["reply_textarea"]).first
             self._click_with_dismiss(reply_textarea, "回覆輸入框")
@@ -468,6 +471,31 @@ class BrowserHandler:
         except Exception as e:
             print(f"  ⚠ 清除搜尋時出錯: {e}")
     
+    def scroll_to_own_reply(self):
+        """送出回覆後，將自己最新留言捲動到視窗上方約 20% 處。"""
+        print(f"  🔍 嘗試捲動留言（user: {self.user_name}）")
+        try:
+            # 先關閉遮罩，再捲動
+            dismissed = self._dismiss_blocking_overlay()
+            if dismissed:
+                print("  🔲 關閉遮罩，等待頁面穩定...")
+                time.sleep(1)
+
+            base = self.page.locator(f"span:text-is('{self.user_name}')")
+            if base.count() > 0:
+                # 用 evaluate 強制捲動（不受 IntersectionObserver 限制），
+                # 並將元素定位在視窗高度 20% 處（名稱顯示在上方）
+                base.last.evaluate("""el => {
+                    const rect = el.getBoundingClientRect();
+                    const absY = rect.top + window.pageYOffset;
+                    window.scrollTo({ top: absY - window.innerHeight * 0.2, behavior: 'instant' });
+                }""")
+                print("  ✅ 留言已捲動至視窗上方")
+            else:
+                print("  ⚠ 找不到自己的留言，略過捲動")
+        except Exception as e:
+            print(f"  ⚠ 捲動失敗: {e}")
+
     def take_screenshot(self, post_id: str) -> str:
         """
         截圖當前頁面並儲存到 screenshots 資料夾
@@ -481,25 +509,6 @@ class BrowserHandler:
         import os
         from datetime import datetime
         try:
-            # 嘗試將自己最新留言捲動到視窗中央再截圖
-            try:
-                self.page.evaluate(
-                    """(userName) => {
-                        const authors = Array.from(
-                            document.querySelectorAll('div.bg-gray-50\\/50 span.font-medium.text-gray-700')
-                        );
-                        const mine = authors.filter(el => el.textContent.trim() === userName);
-                        if (mine.length > 0) {
-                            const last = mine[mine.length - 1];
-                            last.scrollIntoView({ block: 'center', behavior: 'instant' });
-                        }
-                    }""",
-                    self.user_name,
-                )
-                time.sleep(0.5)  # 等瀏覽器 render 完捲動位置
-            except Exception:
-                pass
-
             screenshots_dir = self.screenshots_dir
             os.makedirs(screenshots_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
