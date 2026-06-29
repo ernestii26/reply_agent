@@ -22,7 +22,11 @@ def run(playwright: Playwright, user_config: dict = None) -> None:
     # 初始化模組
     logger = get_logger(log_file=user_config.get("log_file"))
     storage = SQLitePostStorage(db_path=user_config["db_path"])
-    ai = get_ai_handler(reply_prompt_template=user_config["reply_prompt"])
+    ai = get_ai_handler(
+        reply_prompt_template=user_config["reply_prompt"],
+        model=user_config.get("model"),
+        temperature=user_config.get("temperature"),
+    )
 
     # 啟動瀏覽器
     browser = playwright.chromium.launch(

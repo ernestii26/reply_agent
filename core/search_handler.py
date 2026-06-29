@@ -127,7 +127,12 @@ class SearchHandler:
             if not json_match:
                 raise ValueError(f"無法從回應中找到 JSON：{strategy_text[:100]}")
             strategy = json.loads(json_match.group())
-            
+
+            # AI 判斷這篇不需要外部搜尋（純抒發/讀書方法等）就直接跳過，省下 Serper 呼叫
+            if strategy.get("need_search") is False:
+                print("  ⏭ AI 判斷此貼文不需外部搜尋，略過")
+                return ""
+
             search_query = strategy.get("query", "")
 
             if not search_query:

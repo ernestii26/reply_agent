@@ -3,6 +3,7 @@ AI 處理器 - 封裝 AI 判斷和回覆生成邏輯
 """
 import re
 import sys
+import random
 import google.generativeai as genai
 from config.settings import GEMINI_API_KEY, GEMINI_MODEL, AI_CONFIG, GEMINI_API_KEYS_LIST
 
@@ -10,13 +11,15 @@ from config.settings import GEMINI_API_KEY, GEMINI_MODEL, AI_CONFIG, GEMINI_API_
 class AIHandler:
     """AI 處理類，負責判斷是否回覆以及生成回覆內容"""
 
-    def __init__(self, reply_prompt_template: str = None):
+    def __init__(self, reply_prompt_template: str = None, model: str = None, temperature: float = None):
         """初始化 AI 處理器"""
         self.model = None
         self.enabled = False
         self.api_keys = GEMINI_API_KEYS_LIST or []
         self.current_key_index = 0
         self.reply_prompt_template = reply_prompt_template or AI_CONFIG["reply_prompt_template"]
+        self.model_name = model or GEMINI_MODEL
+        self.temperature = temperature
         
         # 嘗試使用可用的 API key 初始化，支援多 key
         if self.api_keys:
@@ -96,28 +99,31 @@ class AIHandler:
             return self._default_reply()
         
         # 每個 key 嘗試一次，失敗後立即切換，所有 key 耗盡才終止
+        # 每次隨機抽一個固定目標字數，避免 LLM 自行決定長度
+        target = random.randint(AI_CONFIG["reply_min_length"], AI_CONFIG["reply_max_length"])
+        min_length = max_length = target
+        print(f"  📏 本次目標字數：{target} 字")
+
         max_attempts = max(1, len(self.api_keys))
         attempt = 0
         while attempt < max_attempts:
             try:
-                # 如果有增強上下文，使用增強上下文；否則使用原始內容
                 context_to_use = enriched_context if enriched_context else content
 
-                # 根據是否有增強上下文調整提示詞
                 if enriched_context and enriched_context != content:
                     prompt = self.reply_prompt_template.format(
                         title=title,
                         content=context_to_use,
-                        min_length=AI_CONFIG["reply_min_length"],
-                        max_length=AI_CONFIG["reply_max_length"]
+                        min_length=min_length,
+                        max_length=max_length,
                     )
                     prompt += "\n\n注意：如果你參考了「論壇相關討論」或「最新相關資訊」中的具體數據（如分數、日期），請在回覆中自然地提及（例如：「根據最新資訊...」、「參考過往討論...」）。"
                 else:
                     prompt = self.reply_prompt_template.format(
                         title=title,
                         content=context_to_use,
-                        min_length=AI_CONFIG["reply_min_length"],
-                        max_length=AI_CONFIG["reply_max_length"]
+                        min_length=min_length,
+                        max_length=max_length,
                     )
 
                 response = self.model.generate_content(prompt)
@@ -140,7 +146,11 @@ class AIHandler:
                 else:
                     print(f"  ✖ 所有 GEMINI API Key 均已嘗試失敗，程序終止")
                     sys.exit(1)
-    
+
+        # 多 key 時 switch 永遠成功，靠 attempt 計數退出循環；走到這代表全部試過仍失敗
+        print(f"  ✖ 所有 GEMINI API Key 額度耗盡，程序終止")
+        sys.exit(1)
+
     def _remove_markdown(self, text: str) -> str:
         """
         移除文字中的 Markdown 格式語法
@@ -182,7 +192,8 @@ class AIHandler:
         """
         try:
             genai.configure(api_key=key)
-            self.model = genai.GenerativeModel(GEMINI_MODEL)
+            generation_config = genai.types.GenerationConfig(temperature=self.temperature) if self.temperature is not None else None
+            self.model = genai.GenerativeModel(self.model_name, generation_config=generation_config)
             self.enabled = True
             return True
         except Exception as e:
@@ -218,6 +229,6 @@ class AIHandler:
         return "同學你好！看到你的問題了，建議可以多參考學長姐的經驗，或者到相關科系的版上詢問看看。加油！"
 
 
-def get_ai_handler(reply_prompt_template: str = None):
+def get_ai_handler(reply_prompt_template: str = None, model: str = None, temperature: float = None):
     """建立並回傳一個新的 AIHandler 實例。"""
-    return AIHandler(reply_prompt_template=reply_prompt_template)
+    return AIHandler(reply_prompt_template=reply_prompt_template, model=model, temperature=temperature)

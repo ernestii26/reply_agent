@@ -246,6 +246,8 @@ USERS = [
         "db_path": "logs/storage_user2.db",
         "screenshots_dir": "logs/screenshots/user2",
         "log_file": "logs/agent_user2.log",
+        "model": "gemini-2.5-flash-lite",
+        "temperature": 1.5,
     },
 ]
 
